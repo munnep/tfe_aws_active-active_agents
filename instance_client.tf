@@ -51,7 +51,7 @@ resource "aws_instance" "terraform_client" {
 
   iam_instance_profile = aws_iam_instance_profile.profile.name
 
-  user_data = templatefile("${path.module}/scripts/user-data-client.sh", {
+  user_data = templatefile("${path.module}/scripts/cloudinit_tfe_client.yaml", {
     terraform_client_version = var.terraform_client_version
   })
 

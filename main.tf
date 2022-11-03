@@ -108,8 +108,6 @@ resource "aws_eip" "nateIP" {
   vpc = true
 }
 
-
-
 resource "aws_nat_gateway" "NAT" {
   allocation_id = aws_eip.nateIP.id
   subnet_id     = aws_subnet.public1.id
@@ -118,9 +116,6 @@ resource "aws_nat_gateway" "NAT" {
     Name = "${var.tag_prefix}-nat"
   }
 }
-
-
-
 
 resource "aws_route_table" "privateroutetable" {
   vpc_id = aws_vpc.main.id
@@ -355,7 +350,6 @@ resource "aws_iam_role_policy" "policy" {
   })
 }
 
-
 # code idea from https://itnext.io/lets-encrypt-certs-with-terraform-f870def3ce6d
 data "aws_route53_zone" "base_domain" {
   name = var.dns_zonename
@@ -385,8 +379,6 @@ resource "acme_certificate" "certificate" {
   depends_on = [acme_registration.registration]
 }
 
-
-
 resource "aws_acm_certificate" "cert" {
   certificate_body  = acme_certificate.certificate.certificate_pem
   private_key       = acme_certificate.certificate.private_key_pem
@@ -402,14 +394,6 @@ resource "aws_route53_record" "www" {
   records = [aws_lb.lb_application.dns_name]
 }
 
-# # loadbalancer Target Group
-# resource "aws_lb_target_group" "lb_target_group1" {
-#   name     = "${var.tag_prefix}-target-group1"
-#   port     = 8800
-#   protocol = "HTTPS"
-#   vpc_id   = aws_vpc.main.id
-# }
-
 # loadbalancer Target Group
 resource "aws_lb_target_group" "lb_target_group2" {
   name     = "${var.tag_prefix}-target-group2"
@@ -422,18 +406,10 @@ resource "aws_lb_target_group" "lb_target_group2" {
     healthy_threshold   = 2
     protocol            = "HTTPS"
     timeout             = 20
-    unhealthy_threshold = 2
+    unhealthy_threshold = 5
     path                = "/_health_check"
   }
 }
-
-# loadbalancer Target Group
-# resource "aws_lb_target_group" "lb_target_group3" {
-#   name     = "${var.tag_prefix}-target-group3"
-#   port     = 19999
-#   protocol = "HTTP"
-#   vpc_id   = aws_vpc.main.id
-# }
 
 
 # application load balancer
@@ -449,20 +425,6 @@ resource "aws_lb" "lb_application" {
   }
 }
 
-# resource "aws_lb_listener" "front_end1" {
-#   load_balancer_arn = aws_lb.lb_application.arn
-#   port              = "8800"
-#   protocol          = "HTTPS"
-#   ssl_policy        = "ELBSecurityPolicy-2016-08"
-#   certificate_arn   = aws_acm_certificate.cert.arn
-
-
-#   default_action {
-#     type             = "forward"
-#     target_group_arn = aws_lb_target_group.lb_target_group1.arn
-#   }
-# }
-
 resource "aws_lb_listener" "front_end2" {
   load_balancer_arn = aws_lb.lb_application.arn
   port              = "443"
@@ -476,17 +438,6 @@ resource "aws_lb_listener" "front_end2" {
     target_group_arn = aws_lb_target_group.lb_target_group2.arn
   }
 }
-
-# resource "aws_lb_listener" "front_end3" {
-#   load_balancer_arn = aws_lb.lb_application.arn
-#   port              = "19999"
-#   protocol          = "HTTP"
-
-#   default_action {
-#     type             = "forward"
-#     target_group_arn = aws_lb_target_group.lb_target_group3.arn
-#   }
-# }
 
 resource "aws_key_pair" "default-key" {
   key_name   = "${var.tag_prefix}-key"
@@ -524,57 +475,6 @@ resource "aws_db_instance" "default" {
   depends_on = [
     aws_s3_object.object_bootstrap
   ]
-}
-
-resource "aws_launch_configuration" "as_conf_tfe_single" {
-  name_prefix          = "${var.tag_prefix}-lc"
-  image_id             = var.ami
-  instance_type        = "t3.2xlarge"
-  security_groups      = [aws_security_group.tfe_server_sg.id]
-  iam_instance_profile = aws_iam_instance_profile.profile.name
-  key_name             = "${var.tag_prefix}-key"
-
-  root_block_device {
-    volume_size = 50
-    volume_type = "io1"
-    iops        = 1000
-  }
-
-  ebs_block_device {
-    device_name = "/dev/sdh"
-    volume_size = 32
-    volume_type = "io1"
-    iops        = 1000
-  }
-
-  ebs_block_device {
-    device_name = "/dev/sdi"
-    volume_size = 100
-    volume_type = "io1"
-    iops        = 2000
-  }
-
-
-  user_data = templatefile("${path.module}/scripts/user-data-single.sh", {
-    tag_prefix         = var.tag_prefix
-    certificate_email  = var.certificate_email
-    filename_airgap    = var.filename_airgap
-    filename_license   = var.filename_license
-    filename_bootstrap = var.filename_bootstrap
-    dns_hostname       = var.dns_hostname
-    tfe_password       = var.tfe_password
-    dns_zonename       = var.dns_zonename
-    pg_dbname          = aws_db_instance.default.db_name
-    pg_address         = aws_db_instance.default.address
-    rds_password       = var.rds_password
-    tfe_bucket         = "${var.tag_prefix}-bucket"
-    region             = var.region
-  })
-
-
-  lifecycle {
-    create_before_destroy = true
-  }
 }
 
 resource "aws_elasticache_subnet_group" "test" {
@@ -631,6 +531,7 @@ resource "aws_launch_configuration" "as_conf_tfe_active" {
     dns_hostname                    = var.dns_hostname
     tfe_password                    = var.tfe_password
     dns_zonename                    = var.dns_zonename
+    certificate_email               = var.certificate_email
     pg_dbname                       = aws_db_instance.default.db_name
     pg_address                      = aws_db_instance.default.address
     rds_password                    = var.rds_password
@@ -645,7 +546,6 @@ resource "aws_launch_configuration" "as_conf_tfe_active" {
     registry_session_secret_key     = random_id.registry_session_secret_key.hex
     root_secret                     = random_id.root_secret.hex
     user_token                      = random_id.user_token.hex
-    certificate_email               = var.certificate_email
   })
 
 
@@ -663,12 +563,10 @@ resource "aws_autoscaling_group" "as_group" {
   health_check_type         = "ELB"
   desired_capacity          = var.asg_desired_capacity
   force_delete              = true
-  launch_configuration      = local.tfe_setup
+  launch_configuration      = aws_launch_configuration.as_conf_tfe_active.name
   vpc_zone_identifier       = [aws_subnet.private1.id]
   target_group_arns         = [aws_lb_target_group.lb_target_group2.id]
-  # target_group_arns         = [aws_lb_target_group.lb_target_group1.id, aws_lb_target_group.lb_target_group2.id, aws_lb_target_group.lb_target_group3.id]
-
-
+ 
   tag {
     key                 = "Name"
     value               = "${var.tag_prefix}-tfe-asg"
