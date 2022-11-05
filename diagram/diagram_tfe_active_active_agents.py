@@ -7,9 +7,9 @@ from diagrams.aws.database import RDSPostgresqlInstance
 from diagrams.aws.database import ElasticacheForRedis
 
 # Variables
-title = "VPC with 2 public subnets and 2 private subnets \n Private subnet has a RDS PostgreSQL and a asg active/active for TFE. \n Single application loadbalancer which is high available and therefore in both public subnets"
+title = "VPC with 2 public subnets and 2 private subnets \n Private subnet has a RDS PostgreSQL and a asg active/active for TFE and Agents. \n Single application loadbalancer which is high available and therefore in both public subnets"
 outformat = "png"
-filename = "diagram_tfe_active_mode"
+filename = "diagram_tfe_active_active_agents"
 direction = "TB"
 
 
@@ -54,6 +54,7 @@ with Diagram(
                         postgresql = RDSPostgresqlInstance("RDS Instance")
                 with Cluster("Redis subnet"):
                         redis = ElasticacheForRedis("Redis Instance")        
+                asg_tfe_agents = EC2AutoScaling("Autoscaling Group \n TFE agents")
  
     # Diagram
     user >>  route53
@@ -63,6 +64,7 @@ with Diagram(
 
 
     asg_tfe_server >> [redis,
+                       asg_tfe_agents,
                        postgresql,
                        bucket_tfe,
                        bucket_files

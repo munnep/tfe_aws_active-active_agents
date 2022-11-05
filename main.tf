@@ -557,16 +557,16 @@ resource "aws_launch_configuration" "as_conf_tfe_active" {
 # Automatic Scaling group
 resource "aws_autoscaling_group" "as_group" {
   name                      = "${var.tag_prefix}-asg"
-  max_size                  = var.asg_max_size
-  min_size                  = var.asg_min_size
+  max_size                  = var.asg_tfe_server_max_size
+  min_size                  = var.asg_tfe_server_min_size
   health_check_grace_period = 3600
   health_check_type         = "ELB"
-  desired_capacity          = var.asg_desired_capacity
+  desired_capacity          = var.asg_tfe_server_desired_capacity
   force_delete              = true
   launch_configuration      = aws_launch_configuration.as_conf_tfe_active.name
   vpc_zone_identifier       = [aws_subnet.private1.id]
   target_group_arns         = [aws_lb_target_group.lb_target_group2.id]
- 
+
   tag {
     key                 = "Name"
     value               = "${var.tag_prefix}-tfe-asg"
