@@ -60,7 +60,7 @@ The repo assumes you have no certificates and want to create them using Let's En
 
 # How to
 
-## Build TFE single instance
+## Build TFE active/active environment
 - Clone the repository to your local machine
 ```sh
 git clone https://github.com/munnep/tfe_aws_active-active_agents.git
@@ -112,9 +112,9 @@ terraform plan
 ```sh
 terraform apply
 ```
-- Terraform output should create 58 resources and show you the public dns string you can use to connect to the TFE instance
+- Terraform output should create 55 resources and show you the public dns string you can use to connect to the TFE instance
 ```sh
-Apply complete! Resources: 58 added, 0 changed, 0 destroyed.
+Apply complete! Resources: 55 added, 0 changed, 0 destroyed.
 
 Outputs:
 
@@ -132,8 +132,7 @@ tfe_appplication = "https://patrick-tfe2.bg.hashicorp-success.com"
   - workspace connected to the agent pool
 
 ```sh
-ssh -J ubuntu@patrick-tfe2-client.bg.hashicorp-success.com ubuntu@<internal ip address of the TFE server> /bin/bash /tmp/tfe_setup.sh
-ssh -J ubuntu@patrick-tfe2-client.bg.hashicorp-success.com ubuntu@10.237.11.195 /bin/bash /tmp/tfe_setup.sh
+ssh -J ubuntu@patrick-tfe2-client.bg.hashicorp-success.com ubuntu@<internal ip address of a TFE server> /bin/bash /tmp/tfe_setup.sh
 ```
 
 - The output of the configuration script will show the AGENT_TOKEN
@@ -166,7 +165,7 @@ terraform destroy
 
 - You now have a TFE active/active cluster
 
-## testing the active/active environment with agents
+## testing
 
 - Go to the directory test_code
 ```sh
