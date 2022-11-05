@@ -7,7 +7,11 @@ output "tfe_appplication" {
 }
 
 output "ssh_tfe_server" {
-  value = "ssh -J ubuntu@${var.dns_hostname}-client.${var.dns_zonename} ubuntu@<internal ip address of the TFE server>"
+  value = "ssh -J ubuntu@${var.dns_hostname}-client.${var.dns_zonename} ubuntu@<internal ip address of a TFE server>"
+}
+
+output "ssh_tfe_agent" {
+  value = "ssh -J ubuntu@${var.dns_hostname}-client.${var.dns_zonename} ubuntu@<internal ip address of a TFE agent>"
 }
 
 output "create_admin_user" {
