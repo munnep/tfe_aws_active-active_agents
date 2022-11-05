@@ -1,5 +1,11 @@
-# tfe_aws_active_mode
+# TFE AWS installation Active/Active with agents
 Install Prod External Services ( Redis + S3 + DB ) active-active installation AWS with the ability to use TFE agents
+
+This repo is a combination of the following 2 repositories
+- https://github.com/munnep/tfe_aws_active_mode
+- https://github.com/munnep/tfe_aws_agents
+
+
 
 With this repository you will be able to do a TFE (Terraform Enterprise) active/active airgap installation on AWS with external services for storage in the form of S3 and PostgreSQL. The server configuration is done by using an autoscaling launch configuration. The TFE instance will be behind a load balancer. Additionally you can add TFE agents with an autoscaling group. 
 
