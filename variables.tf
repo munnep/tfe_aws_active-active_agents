@@ -49,17 +49,31 @@ variable "tfe_password" {
   description = "password for tfe user"
 }
 
-variable "asg_min_size" {
-  description = "Autoscaling group minimal size"
+variable "asg_tfe_server_min_size" {
+  description = "Autoscaling group minimal size TFE instance"
 }
 
-variable "asg_max_size" {
-  description = "Autoscaling group maximal size"
+variable "asg_tfe_server_max_size" {
+  description = "Autoscaling group maximal size  TFE instance"
 }
 
-variable "asg_desired_capacity" {
-  description = "Autoscaling group running number of instances"
+variable "asg_tfe_server_desired_capacity" {
+  description = "Autoscaling group running number of instances  TFE instance"
 }
+
+variable "asg_tfe_agent_min_size" {
+  description = "Autoscaling group minimal size TFE agent"
+}
+
+variable "asg_tfe_agent_max_size" {
+  description = "Autoscaling group maximal size TFE agent"
+}
+
+variable "asg_tfe_agent_desired_capacity" {
+  description = "Autoscaling group running number of TFE agent"
+}
+
+
 
 variable "public_key" {
   type        = string
@@ -73,4 +87,8 @@ variable "terraform_client_version" {
 variable "tfe_active_active" {
   type        = bool
   description = "start the TFE instance as active/active setup"
+}
+
+variable "agent_token" {
+  description = "agent secret token"
 }

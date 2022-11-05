@@ -1,7 +1,7 @@
 # tfe_aws_active_mode
 Install Prod External Services ( Redis + S3 + DB ) active-active installation AWS with the ability to use TFE agents
 
-With this repository you will be able to do a TFE (Terraform Enterprise) active/active airgap installation on AWS with external services for storage in the form of S3 and PostgreSQL. The server configuration is done by using an autoscaling launch configuration. The TFE instance will be behind a load balancer
+With this repository you will be able to do a TFE (Terraform Enterprise) active/active airgap installation on AWS with external services for storage in the form of S3 and PostgreSQL. The server configuration is done by using an autoscaling launch configuration. The TFE instance will be behind a load balancer. Additionally you can add TFE agents with an autoscaling group. 
 
 The Terraform code will do the following steps
 
@@ -57,11 +57,11 @@ The repo assumes you have no certificates and want to create them using Let's En
 ## Build TFE single instance
 - Clone the repository to your local machine
 ```sh
-git clone https://github.com/munnep/tfe_aws_active_mode.git
+git clone https://github.com/munnep/tfe_aws_active-active_agents.git
 ```
 - Go to the directory
 ```sh
-cd tfe_aws_active_mode
+cd tfe_aws_active-active_agents
 ```
 - Set your AWS credentials
 ```sh
@@ -72,24 +72,27 @@ export AWS_SESSION_TOKEN=
 - Store the files needed for the TFE Airgap installation under the `./files` directory, See the notes [here](./files/README.md)
 - create a file called `variables.auto.tfvars` with the following contents and your own values
 ```hcl
-tag_prefix               = "patrick-tfe2"                             # TAG prefix for names to easily find your AWS resources
-region                   = "eu-north-1"                               # Region to create the environment
-vpc_cidr                 = "10.234.0.0/16"                            # subnet mask that can be used 
-ami                      = "ami-09f0506c9ef0fb473"                    # AMI of the Ubuntu image  
-rds_password             = "Password#1"                               # password used for the RDS environment
-filename_airgap          = "652.airgap"                               # filename of your airgap software stored under ./airgap
-filename_license         = "license.rli"                              # filename of your TFE license stored under ./airgap
-filename_bootstrap       = "replicated.tar.gz"                        # filename of the bootstrap installer stored under ./airgap
-dns_hostname             = "patrick-tfe2"                             # DNS hostname for the TFE
-dns_zonename             = "bg.hashicorp-success.com"                 # DNS zone name to be used
-tfe_password             = "Password#1"                               # TFE password for the dashboard and encryption of the data
-certificate_email        = "patrick.munne@hashicorp.com"              # Your email address used by TLS certificate registration
-terraform_client_version = "1.1.7"                                    # Terraform version you want to have installed on the client machine
-public_key               = "ssh-rsa AAAAB3Nza"                        # The public key for you to connect to the server over SSH
-asg_min_size             = 1                                          # autoscaling group minimal size. 
-asg_max_size             = 2                                          # autoscaling group maximum size. 
-asg_desired_capacity     = 2                                          # autoscaling group desired capacity. 
-tfe_active_active        = true                                       # TFE instance setup of active/active in the launch of the instance.
+tag_prefix                       = "patrick-tfe2"                             # TAG prefix for names to easily find your AWS resources
+region                           = "eu-north-1"                               # Region to create the environment
+vpc_cidr                         = "10.234.0.0/16"                            # subnet mask that can be used 
+ami                              = "ami-09f0506c9ef0fb473"                    # AMI of the Ubuntu image  
+rds_password                     = "Password#1"                               # password used for the RDS environment
+filename_airgap                  = "652.airgap"                               # filename of your airgap software stored under ./airgap
+filename_license                 = "license.rli"                              # filename of your TFE license stored under ./airgap
+filename_bootstrap               = "replicated.tar.gz"                        # filename of the bootstrap installer stored under ./airgap
+dns_hostname                     = "patrick-tfe2"                             # DNS hostname for the TFE
+dns_zonename                     = "bg.hashicorp-success.com"                 # DNS zone name to be used
+tfe_password                     = "Password#1"                               # TFE password for the dashboard and encryption of the data
+certificate_email                = "patrick.munne@hashicorp.com"              # Your email address used by TLS certificate registration
+terraform_client_version         = "1.1.7"                                    # Terraform version you want to have installed on the client machine
+public_key                       = "ssh-rsa AAAAB3Nza"                        # The public key for you to connect to the server over SSH
+asg_tfe_server_min_size          = 1                                          # TFE instance autoscaling group minimal size. 
+asg_tfe_server_max_size          = 2                                          # TFE instance autoscaling group maximum size. 
+asg_tfe_server_desired_capacity  = 2                                          # TFE instance autoscaling group desired size. 
+agent_token                      = ""                                         # Leave empty on first apply. Agent token which will be generated for you when starting the TFE configuration script. 
+asg_tfe_agent_min_size           = 1                                          # TFE agent autoscaling group minimal size. 
+asg_tfe_agent_max_size           = 2                                          # TFE agent autoscaling group maximum size. 
+asg_tfe_agent_desired_capacity   = 1                                          # TFE agent autoscaling group desired size. 
 ```
 - Terraform initialize
 ```sh
@@ -115,50 +118,97 @@ ssh_tfe_server = "ssh -J ubuntu@patrick-tfe2-client.bg.hashicorp-success.com ubu
 tfe_appplication = "https://patrick-tfe2.bg.hashicorp-success.com"
 ```
 
-- Create the admin user by going to the `creae_admin_user` link from the terraform output  
-https://patrick-tfe2.bg.hashicorp-success.com/admin/account/new?token=43f6df14dbc1fc59c9062cf3d548accf
-- Create the first account  
-![](media/20220711165340.png)
-- create your organization and workspaces  
-![](media/20220920153535.png)  
+- Start the TFE configuration script. Which will do the following:
+  - create a user named: admin -> Password from variables.auto.tfvars
+  - create an organisation named: test
+  - agent pool named: test-pool
+  - agent authentication token
+  - workspace connected to the agent pool
+
+```sh
+ssh -J ubuntu@patrick-tfe2-client.bg.hashicorp-success.com ubuntu@<internal ip address of the TFE server> /bin/bash /tmp/tfe_setup.sh
+ssh -J ubuntu@patrick-tfe2-client.bg.hashicorp-success.com ubuntu@10.237.11.195 /bin/bash /tmp/tfe_setup.sh
+```
+
+- The output of the configuration script will show the AGENT_TOKEN
+
+```
+Use this in your Terraform variables as a value for AGENT_TOKEN=7SMgLQzq9yjetw.atlasv1.EGV2giX8SGuoueLyIs6zECughJ4urL14eQlRJ10C5vxAAeykYhZfiVDqBWzg7wU81Js
+```
+- add the value to your `variables.auto.tfvars`
+```hcl
+agent_token              = "7SMgLQzq9yjetw.atlasv1.EGV2giX8SGuoueLyIs6zECughJ4urL14eQlRJ10C5vxAAeykYhZfiVDqBWzg7wU81Js"
+```
+- run terraform apply. This will create an autoscaling group with TFE agents.
+```sh
+terraform apply
+```
+output
+```sh
+Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
+```
+- Login to your TFE environment
+https://patrick-tfe2.bg.hashicorp-success.com
+- See the agents that are now available for your usage. Go to settings -> Agents  
+
+![](media/20221023131924.png)    
+- You are now able to use workspaces with these agents. Testing example [here](#testing)
+- Remove everything by using terraform destroy
+```sh
+terraform destroy
+```
 
 - You now have a TFE active/active cluster
 
-## testing the active/active environment
+## testing the active/active environment with agents
 
-- go the directory `test_terraform`
+- Go to the directory test_code
+```sh
+cd test_code
 ```
-cd test_terraform
+- login to your terraform environment just created
+```sh
+terraform login patrick-tfe2.bg.hashicorp-success.com
 ```
-- change the `main.tf` with your own values in the connect string
-```
+- Edit the `main.tf` file with the hostname of your TFE environment
+```hcl
 terraform {
   cloud {
-    hostname = "patrick-tfe2.bg.hashicorp-success.com"             <-- change this line with your own
+    hostname = "patrick-tfe2.bg.hashicorp-success.com"
     organization = "test"
 
     workspaces {
-      name = "test-workspace"
+      name = "test-agent"
     }
   }
 }
 ```
-- login with terraform
-
-```
-terraform login patrick-tfe2.bg.hashicorp-success.com
-```
 - Run terraform init
-```
+```sh
 terraform init
 ```
 - run terraform apply
-```
+```sh
 terraform apply
 ```
-- See the result in TFE itself
-- If this succeeds you have a working active-active tfe environment  
-![](media/20220921193401.png)    
+output
+```sh
+Plan: 3 to add, 0 to change, 0 to destroy.
+
+
+Do you want to perform these actions in workspace "test-agent"?
+  Terraform will perform the actions described above.
+  Only 'yes' will be accepted to approve.
+
+  Enter a value: yes
+
+null_resource.previous: Creation complete after 0s [id=2453745097537198537]
+time_sleep.wait_120_seconds: Creating...
+time_sleep.wait_120_seconds: Still creating... [10s elapsed]
+time_sleep.wait_120_seconds: Still creating... [20s elapsed]
+```
+- under the admin page -> runs you should see the apply running on an agent  
+![](media/20221105103430.png)    
 
 # TODO
 
@@ -191,5 +241,5 @@ terraform apply
 - [x] create a REDIS database environment
 - [x] rescale for active active
 - [x] Test the active active environment is able to run workspaces
-
+- [x] Test the active active environment is able to run workspaces with agents
 
