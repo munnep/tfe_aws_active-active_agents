@@ -4,4 +4,6 @@
 *.tar
 *.tar.gz
 *.tgz
-
+*.pem
+files/certificates/
+notes.md

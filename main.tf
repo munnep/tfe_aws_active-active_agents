@@ -537,7 +537,7 @@ resource "aws_launch_configuration" "as_conf_tfe_active" {
     rds_password                    = var.rds_password
     tfe_bucket                      = "${var.tag_prefix}-bucket"
     region                          = var.region
-    redis_server                    = aws_elasticache_cluster.example.cache_nodes[0]
+    redis_server                    = lookup(aws_elasticache_cluster.example.cache_nodes[0], "address", "No redis created")
     archivist_token                 = random_id.archivist_token.hex
     cookie_hash                     = random_id.cookie_hash.hex
     install_id                      = random_id.install_id.hex
