@@ -1,0 +1,7 @@
+.DS_Store
+*.rli
+*.airgap
+*.tar
+*.tar.gz
+*.tgz
+
