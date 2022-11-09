@@ -95,7 +95,7 @@ public_key                       = "ssh-rsa AAAAB3Nza"                        # 
 asg_tfe_server_min_size          = 1                                          # TFE instance autoscaling group minimal size. 
 asg_tfe_server_max_size          = 2                                          # TFE instance autoscaling group maximum size. 
 asg_tfe_server_desired_capacity  = 2                                          # TFE instance autoscaling group desired size. 
-agent_token                      = ""                                         # Leave empty on first apply. Agent token which will be generated for you when starting the TFE configuration script. 
+create_agents                    = "false"                                    # After TFE creation and working you can set it to true
 asg_tfe_agent_min_size           = 1                                          # TFE agent autoscaling group minimal size. 
 asg_tfe_agent_max_size           = 2                                          # TFE agent autoscaling group maximum size. 
 asg_tfe_agent_desired_capacity   = 1                                          # TFE agent autoscaling group desired size. 
@@ -118,31 +118,18 @@ Apply complete! Resources: 55 added, 0 changed, 0 destroyed.
 
 Outputs:
 
-create_admin_user = "https://patrick-tfe2.bg.hashicorp-success.com/admin/account/new?token=43f6df14dbc1fc59c9062cf3d548accf"
 ssh_tf_client = "ssh ubuntu@patrick-tfe2-client.bg.hashicorp-success.com"
-ssh_tfe_server = "ssh -J ubuntu@patrick-tfe2-client.bg.hashicorp-success.com ubuntu@<internal ip address of the TFE server>"
+ssh_tfe_agent = "ssh -J ubuntu@patrick-tfe2-client.bg.hashicorp-success.com ubuntu@<internal ip address of a TFE agent>"
+ssh_tfe_server = "ssh -J ubuntu@patrick-tfe2-client.bg.hashicorp-success.com ubuntu@<internal ip address of a TFE server>"
 tfe_appplication = "https://patrick-tfe2.bg.hashicorp-success.com"
 ```
-
-- Start the TFE configuration script. Which will do the following:
-  - create a user named: admin -> Password from variables.auto.tfvars
-  - create an organisation named: test
-  - agent pool named: test-pool
-  - agent authentication token
-  - workspace connected to the agent pool
-
-```sh
-ssh -J ubuntu@patrick-tfe2-client.bg.hashicorp-success.com ubuntu@<internal ip address of a TFE server> /bin/bash /tmp/tfe_setup.sh
+## enable agents
+- Switch the value to `true` in the file variables.auto.tfvars
 ```
-
-- The output of the configuration script will show the AGENT_TOKEN
-
-```
-Use this in your Terraform variables as a value for AGENT_TOKEN=7SMgLQzq9yjetw.atlasv1.EGV2giX8SGuoueLyIs6zECughJ4urL14eQlRJ10C5vxAAeykYhZfiVDqBWzg7wU81Js
-```
-- add the value to your `variables.auto.tfvars`
-```hcl
-agent_token              = "7SMgLQzq9yjetw.atlasv1.EGV2giX8SGuoueLyIs6zECughJ4urL14eQlRJ10C5vxAAeykYhZfiVDqBWzg7wU81Js"
+create_agents                   = true
+asg_tfe_agent_min_size          = 1
+asg_tfe_agent_max_size          = 2
+asg_tfe_agent_desired_capacity  = 2
 ```
 - run terraform apply. This will create an autoscaling group with TFE agents.
 ```sh
@@ -163,7 +150,7 @@ https://patrick-tfe2.bg.hashicorp-success.com
 terraform destroy
 ```
 
-- You now have a TFE active/active cluster
+- You now have a TFE active/active cluster with agents
 
 ## testing
 
