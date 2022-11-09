@@ -215,6 +215,16 @@ write_files:
       TOKEN=`curl --header "Content-Type: application/json" --request POST --data '{"username": "admin", "email": "${certificate_email}", "password": "${tfe_password}"}' \ --url https://${dns_hostname}.${dns_zonename}/admin/initial-admin-user?token=${user_token} | jq '.token' | tr -d '"'`
       echo TOKEN $TOKEN
       echo $TOKEN > /tmp/admin_token.txt
+
+      ADMIN_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${admin_token_secret} --region ${region} | jq --raw-output '.SecretString | select(. != null)'`
+
+      echo $ADMIN_TOKEN_SECRET
+
+      if [[ $ADMIN_TOKEN_SECRET == "not_yet_set" ]]
+      then
+        aws secretsmanager update-secret --secret-id ${admin_token_secret} --region ${region} --secret-string $TOKEN  
+      fi
+
       # create the organization called test
       curl \
         --header "Authorization: Bearer $TOKEN" \
@@ -229,7 +239,17 @@ write_files:
       curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data '{"data": {"attributes": {"name":"test-agent","execution-mode": "agent", "agent-pool-id": "'$AGENT_POOL_ID'","resource-count": 0,"updated-at": "2017-11-29T19:18:09.976Z"}},"type": "workspaces"}' https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/workspaces
       # # Create an agent token
       export AGENT_TOKEN=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data '{"data": {"type": "authentication-tokens","attributes": {"description":"api"}}}' https://${dns_hostname}.${dns_zonename}/$AGENT_POOL | jq '.data.attributes.token' | tr -d '"'`
-      echo Use this in your Terraform variables as a value for AGENT_TOKEN=$AGENT_TOKEN
+      
+      echo $AGENT_TOKEN > /tmp/agent_token.txt
+      
+      AGENT_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${agent_token_secret} --region ${region} | jq --raw-output '.SecretString | select(. != null)'`
+
+      if [[ $AGENT_TOKEN_SECRET == "not_yet_set" ]]
+      then
+        aws secretsmanager update-secret --secret-id ${agent_token_secret} --region ${region} --secret-string $AGENT_TOKEN  
+      fi
+
+
     permissions: '0777'
     path: /tmp/tfe_setup.sh 
   - content: |

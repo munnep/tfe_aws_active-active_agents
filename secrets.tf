@@ -2,7 +2,7 @@ data "aws_iam_policy_document" "secretsmanager" {
   statement {
     actions   = ["secretsmanager:GetSecretValue","secretsmanager:UpdateSecret"]
     effect    = "Allow"
-    resources = [aws_secretsmanager_secret_version.agent_token.secret_id]
+    resources = [aws_secretsmanager_secret_version.agent_token_secret.secret_id,aws_secretsmanager_secret_version.admin_token_secret.secret_id]
     sid       = "AllowSecretsManagerSecretAccess"
   }
 }
@@ -13,24 +13,28 @@ resource "aws_iam_role_policy" "secretsmanager" {
   name   = "${var.tag_prefix}-tfe-secretsmanager"
 }
 
-resource "aws_secretsmanager_secret" "agent_token" {
-  description = "TFC agent token"
-  name        = "${var.tag_prefix}-agent_token"
+resource "aws_secretsmanager_secret" "agent_token_secret" {
+  description = "TFE agent token"
+  name        = "${var.tag_prefix}_agent_token"
+
+  recovery_window_in_days = 0
 }
 
-resource "aws_secretsmanager_secret_version" "agent_token" {
-  secret_string = "not_set_yet"
-  secret_id     = aws_secretsmanager_secret.agent_token.id
+resource "aws_secretsmanager_secret_version" "agent_token_secret" {
+  secret_string = "not_yet_set"
+  secret_id     = aws_secretsmanager_secret.agent_token_secret.id
 }
 
-resource "aws_secretsmanager_secret" "admin_token" {
-  description = "TFC agent token"
-  name        = "${var.tag_prefix}-admin_token"
+resource "aws_secretsmanager_secret" "admin_token_secret" {
+  description = "TFE admin token"
+  name        = "${var.tag_prefix}_admin_token"
+
+  recovery_window_in_days = 0
 }
 
-resource "aws_secretsmanager_secret_version" "admin_token" {
-  secret_string = "not_set_yet"
-  secret_id     = aws_secretsmanager_secret.admin_token.id
+resource "aws_secretsmanager_secret_version" "admin_token_secret" {
+  secret_string = "not_yet_set"
+  secret_id     = aws_secretsmanager_secret.admin_token_secret.id
 }
 
 # output "secret_id" {

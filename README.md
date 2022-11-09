@@ -217,13 +217,7 @@ time_sleep.wait_120_seconds: Still creating... [20s elapsed]
 
 # TODO
 
-- [x] Use the RANDOM admin token string
-- [x] create admin user as part of TFE installation
-- [ ] store admin token in aws_secret_manager
-- [x] create organization as part of TFE installation
-- [x] create agent pool as part of TFE installation
-- [x] create agent token as part of TFE installation 
-- [ ] store agent token in aws_secret_manager
+- [ ] Agent starting with token from secrets
 
 # DONE
 
@@ -255,4 +249,10 @@ time_sleep.wait_120_seconds: Still creating... [20s elapsed]
 - [x] rescale for active active
 - [x] Test the active active environment is able to run workspaces
 - [x] Test the active active environment is able to run workspaces with agents
-
+- [x] Use the RANDOM admin token string
+- [x] create admin user as part of TFE installation
+- [x] store admin token in aws_secret_manager
+- [x] create organization as part of TFE installation
+- [x] create agent pool as part of TFE installation
+- [x] create agent token as part of TFE installation 
+- [x] store agent token in aws_secret_manager

@@ -546,6 +546,8 @@ resource "aws_launch_configuration" "as_conf_tfe_active" {
     registry_session_secret_key     = random_id.registry_session_secret_key.hex
     root_secret                     = random_id.root_secret.hex
     user_token                      = random_id.user_token.hex
+    agent_token_secret              = aws_secretsmanager_secret.agent_token_secret.id
+    admin_token_secret              = aws_secretsmanager_secret.admin_token_secret.id
   })
 
 
