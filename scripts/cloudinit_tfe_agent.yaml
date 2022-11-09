@@ -1,4 +1,9 @@
 #cloud-config
+packages_update: true
+packages:
+  - jq
+  - awscli
+  - unzip 
 write_files:
   - content: |
       [Unit]
@@ -26,8 +31,6 @@ runcmd:
   - curl -sL https://raw.githubusercontent.com/kikitux/curl-bash/master/provision/add_github_user_public_keys.sh | GITHUB_USER=munnep bash
   - curl https://releases.hashicorp.com/tfc-agent/1.4.0/tfc-agent_1.4.0_linux_amd64.zip --output /tmp/tfc-agent_1.4.0_linux_amd64.zip 
   - mkdir -p /opt/tfe-agent
-  - apt-get update
-  - apt-get install unzip
   - unzip /tmp/tfc-agent_1.4.0_linux_amd64.zip  -d /opt/tfe-agent
   - export ADMIN_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${agent_token_secret} --region ${region} | jq --raw-output '.SecretString | select(. != null)'`
   - sed -i "s/AGENT_TOKEN_WILL_BE_PLACED_HERE/$ADMIN_TOKEN_SECRET/g" /etc/systemd/system/tfe-agent.service 
@@ -36,4 +39,3 @@ runcmd:
   - systemctl daemon-reload
   - systemctl start tfe-agent
   - systemctl enable tfe-agent.service
-packages_update: true  
