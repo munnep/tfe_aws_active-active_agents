@@ -1,8 +1,8 @@
 data "aws_iam_policy_document" "secretsmanager" {
   statement {
-    actions   = ["secretsmanager:GetSecretValue","secretsmanager:UpdateSecret"]
+    actions   = ["secretsmanager:GetSecretValue", "secretsmanager:UpdateSecret"]
     effect    = "Allow"
-    resources = [aws_secretsmanager_secret_version.agent_token_secret.secret_id,aws_secretsmanager_secret_version.admin_token_secret.secret_id]
+    resources = [aws_secretsmanager_secret_version.agent_token_secret.secret_id, aws_secretsmanager_secret_version.admin_token_secret.secret_id]
     sid       = "AllowSecretsManagerSecretAccess"
   }
 }
@@ -37,8 +37,10 @@ resource "aws_secretsmanager_secret_version" "admin_token_secret" {
   secret_id     = aws_secretsmanager_secret.admin_token_secret.id
 }
 
-# output "secret_id" {
-#   value = aws_secretsmanager_secret.agent_token.id
+# data "aws_secretsmanager_secret_version" "secret-version" {
+#   secret_id = aws_secretsmanager_secret.agent_token_secret.id
+
+#   depends_on = [
+#     aws_secretsmanager_secret_version.agent_token_secret
+#   ]
 # }
-
-
