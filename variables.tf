@@ -73,8 +73,6 @@ variable "asg_tfe_agent_desired_capacity" {
   description = "Autoscaling group running number of TFE agent"
 }
 
-
-
 variable "public_key" {
   type        = string
   description = "public to use on the instances"
