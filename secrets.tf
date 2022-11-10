@@ -38,11 +38,9 @@ resource "aws_secretsmanager_secret" "admin_token_secret" {
 #   secret_id     = aws_secretsmanager_secret.admin_token_secret.id
 # }
 
-
 resource "aws_secretsmanager_secret" "test" {
   description = "test"
   name        = "${var.tag_prefix}_test"
 
   recovery_window_in_days = 0
 }
-

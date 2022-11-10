@@ -34,7 +34,6 @@ resource "random_id" "user_token" {
   byte_length = 16
 }
 
-
 resource "aws_vpc" "main" {
   cidr_block = var.vpc_cidr
 
@@ -80,7 +79,6 @@ resource "aws_subnet" "private2" {
   }
 }
 
-
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.main.id
 
@@ -88,7 +86,6 @@ resource "aws_internet_gateway" "gw" {
     Name = "${var.tag_prefix}-gw"
   }
 }
-
 
 resource "aws_route_table" "publicroutetable" {
   vpc_id = aws_vpc.main.id
@@ -102,7 +99,6 @@ resource "aws_route_table" "publicroutetable" {
     Name = "${var.tag_prefix}-route-table-gw"
   }
 }
-
 
 resource "aws_eip" "nateIP" {
   vpc = true
@@ -129,8 +125,6 @@ resource "aws_route_table" "privateroutetable" {
   }
 
 }
-
-
 
 resource "aws_route_table_association" "PublicRT1" {
   subnet_id      = aws_subnet.public1.id
@@ -189,7 +183,6 @@ resource "aws_security_group" "tfe_server_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-
   ingress {
     description = "https from internet"
     from_port   = 5432
@@ -205,8 +198,6 @@ resource "aws_security_group" "tfe_server_sg" {
     protocol    = "tcp"
     cidr_blocks = [var.vpc_cidr]
   }
-
-
 
   ingress {
     description = "redis "
@@ -256,7 +247,6 @@ resource "aws_s3_bucket" "tfe-bucket-software" {
   }
 }
 
-
 resource "aws_s3_object" "object_airgap" {
   bucket = "${var.tag_prefix}-software"
   key    = var.filename_airgap
@@ -275,7 +265,7 @@ resource "aws_s3_object" "object_license" {
   depends_on = [
     aws_s3_bucket.tfe-bucket-software
   ]
-
+  
 }
 
 resource "aws_s3_object" "object_bootstrap" {
@@ -385,7 +375,6 @@ resource "aws_acm_certificate" "cert" {
   certificate_chain = acme_certificate.certificate.issuer_pem
 }
 
-
 resource "aws_route53_record" "www" {
   zone_id = data.aws_route53_zone.base_domain.zone_id
   name    = var.dns_hostname
@@ -410,7 +399,6 @@ resource "aws_lb_target_group" "lb_target_group2" {
     path                = "/_health_check"
   }
 }
-
 
 # application load balancer
 resource "aws_lb" "lb_application" {
@@ -443,7 +431,6 @@ resource "aws_key_pair" "default-key" {
   key_name   = "${var.tag_prefix}-key"
   public_key = var.public_key
 }
-
 
 resource "aws_db_subnet_group" "default" {
   name       = "main"
@@ -522,7 +509,6 @@ resource "aws_launch_configuration" "as_conf_tfe_active" {
     iops        = 2000
   }
 
-
   user_data = templatefile("${path.module}/scripts/cloudinit_tfe_server.yaml", {
     tag_prefix                      = var.tag_prefix
     filename_airgap                 = var.filename_airgap
@@ -549,7 +535,6 @@ resource "aws_launch_configuration" "as_conf_tfe_active" {
     agent_token_secret              = aws_secretsmanager_secret.agent_token_secret.id
     admin_token_secret              = aws_secretsmanager_secret.admin_token_secret.id
   })
-
 
   lifecycle {
     create_before_destroy = true
