@@ -73,8 +73,6 @@ variable "asg_tfe_agent_desired_capacity" {
   description = "Autoscaling group running number of TFE agent"
 }
 
-
-
 variable "public_key" {
   type        = string
   description = "public to use on the instances"
@@ -84,11 +82,7 @@ variable "terraform_client_version" {
   description = "Terraform client installed on the terraform client machine"
 }
 
-variable "tfe_active_active" {
+variable "create_agents" {
   type        = bool
-  description = "start the TFE instance as active/active setup"
-}
-
-variable "agent_token" {
-  description = "agent secret token"
+  description = "create the agents because TFE is available"
 }

@@ -1,5 +1,5 @@
 resource "aws_launch_configuration" "agent" {
-  count                = var.agent_token == "" ? 0 : 1
+  count                = var.create_agents ? 1 : 0
   name_prefix          = "${var.tag_prefix}-agent"
   image_id             = var.ami
   instance_type        = "t3.small"
@@ -13,10 +13,11 @@ resource "aws_launch_configuration" "agent" {
   }
 
   user_data = templatefile("${path.module}/scripts/cloudinit_tfe_agent.yaml", {
-    tag_prefix   = var.tag_prefix
-    dns_hostname = var.dns_hostname
-    dns_zonename = var.dns_zonename
-    agent_token  = var.agent_token
+    tag_prefix         = var.tag_prefix
+    dns_hostname       = var.dns_hostname
+    dns_zonename       = var.dns_zonename
+    region             = var.region
+    agent_token_secret = aws_secretsmanager_secret.agent_token_secret.id
   })
 
   lifecycle {
@@ -25,7 +26,7 @@ resource "aws_launch_configuration" "agent" {
 }
 
 resource "aws_autoscaling_group" "asg_agent" {
-  count                = var.agent_token == "" ? 0 : 1
+  count                = var.create_agents ? 1 : 0
   name                 = "${var.tag_prefix}-asg-agent"
   max_size             = var.asg_tfe_agent_max_size
   min_size             = var.asg_tfe_agent_min_size
@@ -39,6 +40,10 @@ resource "aws_autoscaling_group" "asg_agent" {
     value               = "${var.tag_prefix}-asg-agent"
     propagate_at_launch = true
   }
+
+  depends_on = [
+    aws_nat_gateway.NAT, aws_security_group.tfe_server_sg, aws_internet_gateway.gw, aws_db_instance.default
+  ]
 
   timeouts {
     delete = "15m"

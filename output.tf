@@ -13,7 +13,3 @@ output "ssh_tfe_server" {
 output "ssh_tfe_agent" {
   value = "ssh -J ubuntu@${var.dns_hostname}-client.${var.dns_zonename} ubuntu@<internal ip address of a TFE agent>"
 }
-
-output "create_admin_user" {
-  value = "https://${var.dns_hostname}.${var.dns_zonename}/admin/account/new?token=${random_id.user_token.hex}"
-}
