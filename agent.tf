@@ -41,6 +41,10 @@ resource "aws_autoscaling_group" "asg_agent" {
     propagate_at_launch = true
   }
 
+  depends_on = [
+    aws_nat_gateway.NAT, aws_security_group.tfe_server_sg, aws_internet_gateway.gw, aws_db_instance.default
+  ]
+
   timeouts {
     delete = "15m"
   }

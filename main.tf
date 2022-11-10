@@ -265,7 +265,6 @@ resource "aws_s3_object" "object_license" {
   depends_on = [
     aws_s3_bucket.tfe-bucket-software
   ]
-  
 }
 
 resource "aws_s3_object" "object_bootstrap" {

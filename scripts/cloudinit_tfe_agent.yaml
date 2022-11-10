@@ -32,15 +32,14 @@ runcmd:
     apt-get install -y jq awscli unzip 
   - curl -sL https://raw.githubusercontent.com/kikitux/curl-bash/master/provision/add_github_user_public_keys.sh | GITHUB_USER=kikitux bash
   - curl -sL https://raw.githubusercontent.com/kikitux/curl-bash/master/provision/add_github_user_public_keys.sh | GITHUB_USER=munnep bash
-  - unzip /tmp/tfc-agent_1.4.0_linux_amd64.zip  -d /opt/tfe-agent
   - |
     let i=0
     while true; do
-        AGENT_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${agent_token_secret} --region ${region} | jq --raw-output '.SecretString | select(. != null)'`
+        AGENT_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${agent_token_secret} --region ${region}`
         if [ $? -ne 0 ]
         then
             # lets wait 10 mins, max
-            if [ $? -gt 10 ] ; then
+            if [ $i -gt 10 ] ; then
                 echo "err: timeout waiting for AGENT_TOKEN_SECRET"
                 exit 1
             fi
@@ -49,13 +48,14 @@ runcmd:
             sleep 60
             let i++
         else
-            export ADMIN_TOKEN_SECRET=
+            export ADMIN_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${agent_token_secret} --region ${region} | jq --raw-output '.SecretString | select(. != null)'`
             echo "AGENT_TOKEN_SECRET has a known value"
             break
         fi
     done
   - mkdir -p /opt/tfe-agent    
   - curl https://releases.hashicorp.com/tfc-agent/1.4.0/tfc-agent_1.4.0_linux_amd64.zip --output /tmp/tfc-agent_1.4.0_linux_amd64.zip   
+  - unzip /tmp/tfc-agent_1.4.0_linux_amd64.zip  -d /opt/tfe-agent
   - sed -i "s/AGENT_TOKEN_WILL_BE_PLACED_HERE/$ADMIN_TOKEN_SECRET/g" /etc/systemd/system/tfe-agent.service 
   - export INSTANCE_ID=`curl http://169.254.169.254/latest/meta-data/instance-id`
   - sed -i "s/INSTANCE_ID_WILL_BE_PLACED_HERE/$INSTANCE_ID/g" /etc/systemd/system/tfe-agent.service
