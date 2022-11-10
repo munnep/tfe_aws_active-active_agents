@@ -128,8 +128,8 @@ tfe_appplication = "https://patrick-tfe2.bg.hashicorp-success.com"
 ```
 create_agents                   = true
 asg_tfe_agent_min_size          = 1
-asg_tfe_agent_max_size          = 2
-asg_tfe_agent_desired_capacity  = 2
+asg_tfe_agent_max_size          = 10
+asg_tfe_agent_desired_capacity  = 10
 ```
 - run terraform apply. This will create an autoscaling group with TFE agents.
 ```sh
@@ -141,9 +141,9 @@ Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
 ```
 - Login to your TFE environment
 https://patrick-tfe2.bg.hashicorp-success.com
-- See the agents that are now available for your usage. Go to settings -> Agents  
+- See the agents that are now available for your usage. Go to settings -> Agents    
+![](media/20221110161803.png)    
 
-![](media/20221023131924.png)    
 - You are now able to use workspaces with these agents. Testing example [here](#testing)
 - Remove everything by using terraform destroy
 ```sh
@@ -201,6 +201,26 @@ time_sleep.wait_120_seconds: Still creating... [20s elapsed]
 ```
 - under the admin page -> runs you should see the apply running on an agent  
 ![](media/20221105103430.png)    
+
+
+5 TFE agents in the Terraform app     
+![](media/20221110160108.png)    
+
+TFE agents and TFE instances in AWS console    
+![](media/20221110160236.png)    
+
+
+10 TFE agents in the Terraform app   
+![](media/20221110161803.png)    
+
+TFE agents and TFE instances in AWS console
+![](media/20221110161931.png)    
+
+
+
+
+
+
 
 # TODO
 
