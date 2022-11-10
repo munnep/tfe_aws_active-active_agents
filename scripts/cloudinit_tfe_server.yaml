@@ -216,13 +216,12 @@ write_files:
       echo TOKEN $TOKEN
       echo $TOKEN > /tmp/admin_token.txt
 
-      ADMIN_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${admin_token_secret} --region ${region} | jq --raw-output '.SecretString | select(. != null)'`
+      # ADMIN_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${admin_token_secret} --region ${region} | jq --raw-output '.SecretString | select(. != null)'`
 
-      echo $ADMIN_TOKEN_SECRET
-
-      if [[ $ADMIN_TOKEN_SECRET == "not_yet_set" ]]
+      ADMIN_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${admin_token_secret} --region ${region}`
+      if [ $? -ne 0 ]
       then
-        aws secretsmanager update-secret --secret-id ${admin_token_secret} --region ${region} --secret-string $TOKEN  
+        aws secretsmanager put-secret-value --secret-id ${admin_token_secret} --region ${region} --secret-string $TOKEN  
       fi
 
       # create the organization called test
@@ -242,11 +241,12 @@ write_files:
       
       echo $AGENT_TOKEN > /tmp/agent_token.txt
       
-      AGENT_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${agent_token_secret} --region ${region} | jq --raw-output '.SecretString | select(. != null)'`
+      # AGENT_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${agent_token_secret} --region ${region} | jq --raw-output '.SecretString | select(. != null)'`
 
-      if [[ $AGENT_TOKEN_SECRET == "not_yet_set" ]]
+      AGENT_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${agent_token_secret} --region ${region}`
+      if [ $? -ne 0 ]
       then
-        aws secretsmanager update-secret --secret-id ${agent_token_secret} --region ${region} --secret-string $AGENT_TOKEN  
+        aws secretsmanager put-secret-value --secret-id ${agent_token_secret} --region ${region} --secret-string $AGENT_TOKEN  
       fi
 
 
