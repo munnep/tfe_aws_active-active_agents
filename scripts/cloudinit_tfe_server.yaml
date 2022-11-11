@@ -203,13 +203,6 @@ write_files:
       aws s3 cp s3://${tag_prefix}-software/${filename_airgap} /tmp/${filename_airgap}
       aws s3 cp s3://${tag_prefix}-software/${filename_license} /tmp/${filename_license}
       aws s3 cp s3://${tag_prefix}-software/${filename_bootstrap} /tmp/${filename_bootstrap}
-      aws s3 cp s3://${tag_prefix}-software/certificate_pem /tmp/certificate_pem
-      aws s3 cp s3://${tag_prefix}-software/issuer_pem /tmp/issuer_pem
-      aws s3 cp s3://${tag_prefix}-software/private_key_pem /tmp/private_key_pem
-      
-      # Create a full chain from the certificates
-      cat /tmp/certificate_pem >> /tmp/fullchain_pem
-      cat /tmp/issuer_pem >> /tmp/fullchain_pem
       
       # directory for decompress the file
       sudo mkdir -p /opt/tfe
@@ -268,6 +261,21 @@ write_files:
               }
           }
       }
+  - path: /tmp/tfe_create_workspace.json
+    permissions: '0755'
+    content: |  
+      {
+          "data": {
+              "attributes": {
+                  "name": "test-agent",
+                  "execution-mode": "agent",
+                  "agent-pool-id": "'AGENT_POOL_ID_WILL_BE_PLACED_HERE'",
+                  "resource-count": 0,
+                  "updated-at": "2017-11-29T19:18:09.976Z"
+              }
+          },
+          "type": "workspaces"
+      }  
   - path: /tmp/tfe_setup.sh
     permissions: '0777'
     content: |
@@ -327,10 +335,10 @@ write_files:
       fi
       
       # Create a workspace
-      curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data '{"data": {"attributes": {"name":"test-agent","execution-mode": "agent", "agent-pool-id": "'$AGENT_POOL_ID'","resource-count": 0,"updated-at": "2017-11-29T19:18:09.976Z"}},"type": "workspaces"}' https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/workspaces
+      sed -i "s/AGENT_POOL_ID_WILL_BE_PLACED_HERE/$AGENT_POOL_ID/g" /tmp/tfe_create_workspace.json 
+      curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data @?/tmp/tfe_create_workspace.json https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/workspaces
 runcmd:
   - sudo bash /tmp/install_software.sh 
   - sudo bash /tmp/download_and_unpack_software.sh 
   - sudo bash /tmp/install_tfe.sh 
   - sudo bash /tmp/tfe_setup.sh 
-packages_update: true  
