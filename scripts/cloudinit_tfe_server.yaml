@@ -259,10 +259,7 @@ write_files:
         --data '{"data": { "type": "organizations", "attributes": {"name": "test", "email": "${certificate_email}"}}}' \
         https://${dns_hostname}.${dns_zonename}/api/v2/organizations
         
-      # Create a workspace
-      export AGENT_POOL_ID=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request GET https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/agent-pools | jq '.data[0].id' | tr -d '"'`
-      curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data '{"data": {"attributes": {"name":"test-agent","execution-mode": "agent", "agent-pool-id": "'$AGENT_POOL_ID'","resource-count": 0,"updated-at": "2017-11-29T19:18:09.976Z"}},"type": "workspaces"}' https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/workspaces
-             
+     
       # Create an agent pool
       export AGENT_POOL=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data '{"data": {"type": "agent-pools", "attributes": { "name": "test-pool", "organization-scoped": true}}}' https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/agent-pools | jq '.data.relationships."authentication-tokens".links.related' | tr -d '"'`
       
@@ -275,6 +272,11 @@ write_files:
       then
         aws secretsmanager put-secret-value --secret-id ${agent_token_secret} --region ${region} --secret-string $AGENT_TOKEN  
       fi
+      
+      # Create a workspace
+      export AGENT_POOL_ID=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request GET https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/agent-pools | jq '.data[0].id' | tr -d '"'`
+      curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data '{"data": {"attributes": {"name":"test-agent","execution-mode": "agent", "agent-pool-id": "'$AGENT_POOL_ID'","resource-count": 0,"updated-at": "2017-11-29T19:18:09.976Z"}},"type": "workspaces"}' https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/workspaces
+        
     permissions: '0777'
     path: /tmp/tfe_setup.sh     
 runcmd:
