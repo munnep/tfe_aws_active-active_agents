@@ -1,6 +1,8 @@
 #cloud-config
 write_files:
-  - content: |
+  - path: /etc/systemd/system/tfe-agent.service
+    permissions: '0750'
+    content: |
       [Unit]
       Description=TFE agent
       
@@ -19,9 +21,9 @@ write_files:
       
       [Install]
       WantedBy=multi-user.target
+  - path: /var/tmp/get_token.sh        
     permissions: '0750'
-    path: /etc/systemd/system/tfe-agent.service
-  - content: |
+    content: |
       #!/usr/bin/env bash
       until ping -c1 archive.ubuntu.com &>/dev/null; do
         echo "waiting for networking to initialise"
@@ -35,8 +37,8 @@ write_files:
           AGENT_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${agent_token_secret} --region ${region} | jq --raw-output '.SecretString | select(. != null)'`
           if [ $? -ne 0 ]
           then
-              # lets wait 10 mins, max
-              if [ $i -gt 10 ] ; then
+              # lets wait 20 mins, max
+              if [ $i -gt 20 ] ; then
                   echo "err: timeout waiting for AGENT_TOKEN_SECRET"
                   exit 1
               fi
@@ -59,10 +61,7 @@ write_files:
       systemctl daemon-reload
       systemctl start tfe-agent
       systemctl enable tfe-agent.service
-    permissions: '0750'
-    path: /var/tmp/get_token.sh        
 runcmd:
   - bash /var/tmp/get_token.sh
   - curl -sL https://raw.githubusercontent.com/kikitux/curl-bash/master/provision/add_github_user_public_keys.sh | GITHUB_USER=kikitux bash
   - curl -sL https://raw.githubusercontent.com/kikitux/curl-bash/master/provision/add_github_user_public_keys.sh | GITHUB_USER=munnep bash
-
