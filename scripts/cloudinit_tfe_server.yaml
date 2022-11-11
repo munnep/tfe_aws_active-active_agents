@@ -262,6 +262,7 @@ write_files:
      
       # Create an agent pool
       export AGENT_POOL=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data '{"data": {"type": "agent-pools", "attributes": { "name": "test-pool", "organization-scoped": true}}}' https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/agent-pools | jq '.data.relationships."authentication-tokens".links.related' | tr -d '"'`
+      export AGENT_POOL_ID=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request GET https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/agent-pools | jq '.data[0].id' | tr -d '"'`
       
       # Create an agent token
       export AGENT_TOKEN=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data '{"data": {"type": "authentication-tokens","attributes": {"description":"api"}}}' https://${dns_hostname}.${dns_zonename}/$AGENT_POOL | jq '.data.attributes.token' | tr -d '"'`
@@ -274,7 +275,6 @@ write_files:
       fi
       
       # Create a workspace
-      export AGENT_POOL_ID=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request GET https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/agent-pools | jq '.data[0].id' | tr -d '"'`
       curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data '{"data": {"attributes": {"name":"test-agent","execution-mode": "agent", "agent-pool-id": "'$AGENT_POOL_ID'","resource-count": 0,"updated-at": "2017-11-29T19:18:09.976Z"}},"type": "workspaces"}' https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/workspaces
         
     permissions: '0777'
