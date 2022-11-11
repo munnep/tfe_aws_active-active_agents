@@ -37,8 +37,8 @@ write_files:
           AGENT_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${agent_token_secret} --region ${region} | jq --raw-output '.SecretString | select(. != null)'`
           if [ $? -ne 0 ]
           then
-              # lets wait 10 mins, max
-              if [ $i -gt 10 ] ; then
+              # lets wait 20 mins, max
+              if [ $i -gt 20 ] ; then
                   echo "err: timeout waiting for AGENT_TOKEN_SECRET"
                   exit 1
               fi
