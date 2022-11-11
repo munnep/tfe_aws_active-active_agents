@@ -258,7 +258,6 @@ write_files:
         --request POST \
         --data '{"data": { "type": "organizations", "attributes": {"name": "test", "email": "${certificate_email}"}}}' \
         https://${dns_hostname}.${dns_zonename}/api/v2/organizations
-        
      
       # Create an agent pool
       export AGENT_POOL=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data '{"data": {"type": "agent-pools", "attributes": { "name": "test-pool", "organization-scoped": true}}}' https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/agent-pools | jq '.data.relationships."authentication-tokens".links.related' | tr -d '"'`
