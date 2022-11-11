@@ -188,7 +188,15 @@ write_files:
     path: /tmp/install_software.sh 
   - content: |
       #!/usr/bin/env bash
+
+      # wait until archive is available. Wait until there is internet before continue
+      until ping -c1 archive.ubuntu.com &>/dev/null; do
+       echo "waiting for networking to initialise"
+       sleep 3 
+      done 
+      
       # Download all the software and files needed
+      apt-get update      
       apt-get -y install awscli
       aws s3 cp s3://${tag_prefix}-software/${filename_airgap} /tmp/${filename_airgap}
       aws s3 cp s3://${tag_prefix}-software/${filename_license} /tmp/${filename_license}
