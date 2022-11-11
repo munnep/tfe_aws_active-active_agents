@@ -100,8 +100,8 @@ write_files:
       
       # wait until archive is available. Wait until there is internet before continue
       until ping -c1 archive.ubuntu.com &>/dev/null; do
-       echo "waiting for networking to initialise"
-       sleep 3 
+        echo "waiting for networking to initialise"
+        sleep 3 
       done 
       
       # install monitoring tools
@@ -191,8 +191,8 @@ write_files:
 
       # wait until archive is available. Wait until there is internet before continue
       until ping -c1 archive.ubuntu.com &>/dev/null; do
-       echo "waiting for networking to initialise"
-       sleep 3 
+        echo "waiting for networking to initialise"
+        sleep 3 
       done 
       
       # Download all the software and files needed
