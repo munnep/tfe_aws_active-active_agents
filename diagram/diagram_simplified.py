@@ -7,7 +7,7 @@ from diagrams.aws.database import RDSPostgresqlInstance, ElasticacheForRedis
 from diagrams.aws.compute import EC2
 
 # Variables
-title = "3 TFE instances with 5 TFE agents"
+title = "3 TFE instances with 5 TFE agents "
 outformat = "png"
 filename = "diagram_simplified"
 direction = "TB"
