@@ -97,11 +97,11 @@ terraform_client_version         = "1.1.7"                                    # 
 public_key                       = "ssh-rsa AAAAB3Nza"                        # The public key for you to connect to the server over SSH
 asg_tfe_server_min_size          = 1                                          # TFE instance autoscaling group minimal size. 
 asg_tfe_server_max_size          = 5                                          # TFE instance autoscaling group maximum size. 
-asg_tfe_server_desired_capacity  = 3                                          # TFE instance autoscaling group desired size. 
-create_agents                    = false                                      # If you want to create TFE agents right away. 
+asg_tfe_server_desired_capacity  = 5                                          # TFE instance autoscaling group desired size. 
+create_agents                    = true                                       # If you want to create TFE agents right away. 
 asg_tfe_agent_min_size           = 1                                          # TFE agent autoscaling group minimal size. 
 asg_tfe_agent_max_size           = 10                                         # TFE agent autoscaling group maximum size. 
-asg_tfe_agent_desired_capacity   = 5                                          # TFE agent autoscaling group desired size. 
+asg_tfe_agent_desired_capacity   = 10                                         # TFE agent autoscaling group desired size. 
 ```
 - Terraform initialize
 ```sh
@@ -126,28 +126,12 @@ ssh_tfe_agent = "ssh -J ubuntu@patrick-tfe2-client.bg.hashicorp-success.com ubun
 ssh_tfe_server = "ssh -J ubuntu@patrick-tfe2-client.bg.hashicorp-success.com ubuntu@<internal ip address of a TFE server>"
 tfe_appplication = "https://patrick-tfe2.bg.hashicorp-success.com"
 ```
-## enable agents if not done in the previous step
-- Switch the value to `true` in the file variables.auto.tfvars
-```
-create_agents                   = true
-asg_tfe_agent_min_size          = 1
-asg_tfe_agent_max_size          = 10
-asg_tfe_agent_desired_capacity  = 5
-```
-- run terraform apply. This will create an autoscaling group with TFE agents.
-```sh
-terraform apply
-```
-output
-```sh
-Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
-```
 - Login to your TFE environment
 https://patrick-tfe2.bg.hashicorp-success.com
-- See the agents that are now available for your usage. Go to settings -> Agents    (example shows 10 agents)
-![](media/20221110161803.png)    
-- Overview in AWS console with 5 TFE server and 10 agents   
-![](media/20221110161931.png)   
+- See the agents that are now available for your usage. Go to settings -> Agents    (example shows 10 agents)  
+![](media/20221114120840.png)    
+- Overview in AWS console with 5 TFE servers and 10 agents     
+![](media/20221114120814.png)    
 - You are now able to use workspaces with these agents. Testing example [here](#testing)
 - Remove everything by using terraform destroy
 ```sh
@@ -249,3 +233,5 @@ time_sleep.wait_120_seconds: Still creating... [20s elapsed]
 - [x] create agent token as part of TFE installation 
 - [x] store agent token in aws_secret_manager
 - [x] Agent starting with token from secrets
+
+
