@@ -130,7 +130,7 @@ tfe_appplication = "https://patrick-tfe2.bg.hashicorp-success.com"
 https://patrick-tfe2.bg.hashicorp-success.com
 - See the agents that are now available for your usage. Go to settings -> Agents    (example shows 10 agents)  
 ![](media/20221114120840.png)    
-- Overview in AWS console with 5 TFE server and 10 agents     
+- Overview in AWS console with 5 TFE servers and 10 agents     
 ![](media/20221114120814.png)    
 - You are now able to use workspaces with these agents. Testing example [here](#testing)
 - Remove everything by using terraform destroy
