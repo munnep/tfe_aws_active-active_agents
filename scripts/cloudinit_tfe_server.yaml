@@ -269,7 +269,7 @@ write_files:
               "attributes": {
                   "name": "test-agent",
                   "execution-mode": "agent",
-                  "agent-pool-id": "'AGENT_POOL_ID_WILL_BE_PLACED_HERE'",
+                  "agent-pool-id": "AGENT_POOL_ID_WILL_BE_PLACED_HERE",
                   "resource-count": 0,
                   "updated-at": "2017-11-29T19:18:09.976Z"
               }
@@ -336,7 +336,7 @@ write_files:
       
       # Create a workspace
       sed -i "s/AGENT_POOL_ID_WILL_BE_PLACED_HERE/$AGENT_POOL_ID/g" /tmp/tfe_create_workspace.json 
-      curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data @?/tmp/tfe_create_workspace.json https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/workspaces
+      curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data @/tmp/tfe_create_workspace.json https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/workspaces
 runcmd:
   - sudo bash /tmp/install_software.sh 
   - sudo bash /tmp/download_and_unpack_software.sh 

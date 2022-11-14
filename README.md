@@ -249,3 +249,7 @@ time_sleep.wait_120_seconds: Still creating... [20s elapsed]
 - [x] create agent token as part of TFE installation 
 - [x] store agent token in aws_secret_manager
 - [x] Agent starting with token from secrets
+
+![](media/20221114120814.png)    
+![](media/20221114120840.png)    
+
