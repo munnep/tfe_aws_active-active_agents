@@ -302,7 +302,7 @@ write_files:
       
       # get the admin token you can user to create the first user
       # Create the first user called admin and get the token
-      TOKEN=`curl --header "Content-Type: application/json" --request POST --data @/tmp/tfe_initial_user.json \ --url https://${dns_hostname}.${dns_zonename}/admin/initial-admin-user?token=${user_token} | jq -r '.token' 
+      TOKEN=`curl --header "Content-Type: application/json" --request POST --data @/tmp/tfe_initial_user.json  --url https://${dns_hostname}.${dns_zonename}/admin/initial-admin-user?token=${user_token} | jq -r '.token' `
       echo TOKEN $TOKEN
       echo $TOKEN > /tmp/admin_token.txt
 
@@ -321,11 +321,11 @@ write_files:
         https://${dns_hostname}.${dns_zonename}/api/v2/organizations
      
       # Create an agent pool
-      export AGENT_POOL=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data @/tmp/tfe_create_agent_pool.json https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/agent-pools | jq -r '.data.relationships."authentication-tokens".links.related'
-      export AGENT_POOL_ID=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request GET https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/agent-pools | jq -r '.data[0].id'
+      export AGENT_POOL=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data @/tmp/tfe_create_agent_pool.json https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/agent-pools | jq -r '.data.relationships."authentication-tokens".links.related'`
+      export AGENT_POOL_ID=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request GET https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/agent-pools | jq -r '.data[0].id'`
       
       # Create an agent token
-      export AGENT_TOKEN=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data @/tmp/tfe_create_agent_token.json https://${dns_hostname}.${dns_zonename}/$AGENT_POOL | jq -r '.data.attributes.token'
+      export AGENT_TOKEN=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data @/tmp/tfe_create_agent_token.json https://${dns_hostname}.${dns_zonename}/$AGENT_POOL | jq -r '.data.attributes.token'`
       echo $AGENT_TOKEN > /tmp/agent_token.txt
       
       AGENT_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${agent_token_secret} --region ${region}`
