@@ -34,7 +34,7 @@ write_files:
       let i=0
       while true; do
           set -o pipefail
-          AGENT_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${agent_token_secret} --region ${region} | jq --raw-output '.SecretString | select(. != null)'`
+          AGENT_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${agent_token_secret} --region ${region} | jq -r '.SecretString | select(. != null)'`
           if [ $? -ne 0 ]
           then
               # lets wait 20 mins, max
