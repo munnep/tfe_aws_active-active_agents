@@ -215,7 +215,7 @@ write_files:
       pushd /opt/tfe
       
       # check replicated.conf /tmp/*.json and /etc/*.json are valid json files 
-      for json in /etc/replicated.conf /tmp/*.json /etc/*.json ; do
+      for json in /etc/replicated.conf /tmp/*.json ; do
         echo INFO: checking $json
         jq -r . $json
         if [ $? -ne 0 ] ; then
