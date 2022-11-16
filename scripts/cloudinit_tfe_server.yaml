@@ -213,6 +213,17 @@ write_files:
     content: |
       #!/usr/bin/env bash
       pushd /opt/tfe
+      
+      # check replicated.conf /tmp/*.json and /etc/*.json are valid json files 
+      for json in /etc/replicated.conf /tmp/*.json /etc/*.json ; do
+        echo INFO: checking $json
+        jq -r . $json
+        if [ $? -ne 0 ] ; then
+          echo ERR: $json is not a valid json
+          exit 1
+        fi
+      done
+
       # Following manual:
       # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
       TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
