@@ -323,7 +323,7 @@ write_files:
         aws secretsmanager put-secret-value --secret-id ${admin_token_secret} --region ${region} --secret-string $TOKEN  
       fi
 
-      # create organization test
+      # create organization
       curl \
         --header "Authorization: Bearer $TOKEN" \
         --header "Content-Type: application/vnd.api+json" \
@@ -332,8 +332,7 @@ write_files:
         https://${dns_hostname}.${dns_zonename}/api/v2/organizations
      
       # Create an agent pool
-      export AGENT_POOL=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data @/tmp/tfe_create_agent_pool.json https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/agent-pools | jq -r '.data.relationships."authentication-tokens".links.related'`
-      export AGENT_POOL_ID=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request GET https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/agent-pools | jq -r '.data[0].id'`
+      export AGENT_POOL_ID=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data @/tmp/tfe_create_agent_pool.json https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/agent-pools | jq -r '.data.id'`
       
       # Create an agent token
       export AGENT_TOKEN=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data @/tmp/tfe_create_agent_token.json https://${dns_hostname}.${dns_zonename}/$AGENT_POOL | jq -r '.data.attributes.token'`
