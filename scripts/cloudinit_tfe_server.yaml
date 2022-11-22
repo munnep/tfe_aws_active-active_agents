@@ -315,7 +315,10 @@ write_files:
       # so one server tries first
       
       # we get 2 characters from random
-      sleep ${RANDOM:1:2}
+      WAIT=$${RANDOM:1:2}
+      
+      echo Info: sleeping for $WAIT
+      sleep $WAIT
       
       # get the admin token you can user to create the first user
       # Create the first user called admin and get the token
