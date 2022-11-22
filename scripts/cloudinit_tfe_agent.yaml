@@ -11,6 +11,7 @@ write_files:
       Environment="TFC_ADDRESS=https://${dns_hostname}.${dns_zonename}"
       Environment="TFC_AGENT_TOKEN=AGENT_TOKEN_WILL_BE_PLACED_HERE"
       Environment="TFC_AGENT_NAME=INSTANCE_ID_WILL_BE_PLACED_HERE"
+      Environment="TFC_AGENT_AUTO_UPDATE=disabled"
       User=root
       WorkingDirectory=/opt/tfe-agent
       ExecStart=/opt/tfe-agent/tfc-agent
