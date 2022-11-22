@@ -311,6 +311,12 @@ write_files:
           fi
       done
       
+      # as we will run this from all servers in ASG, we will use a random sleep
+      # so one server tries first
+      
+      # we get 2 characters from random
+      sleep ${RANDOM:1:2}
+      
       # get the admin token you can user to create the first user
       # Create the first user called admin and get the token
       curl --header "Content-Type: application/json" --request POST --data @/etc/tfe_initial_user.json  --url https://${dns_hostname}.${dns_zonename}/admin/initial-admin-user?token=${user_token} | tee /etc/tfe_initial_user_output.json
