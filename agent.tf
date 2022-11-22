@@ -18,6 +18,7 @@ resource "aws_launch_configuration" "agent" {
     dns_zonename       = var.dns_zonename
     region             = var.region
     agent_token_secret = aws_secretsmanager_secret.agent_token_secret.id
+    tfe_agent_version  = var.tfe_agent_version 
   })
 
   lifecycle {

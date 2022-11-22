@@ -53,8 +53,8 @@ write_files:
           fi
       done  
       mkdir -p /opt/tfe-agent    
-      curl https://releases.hashicorp.com/tfc-agent/1.4.0/tfc-agent_1.4.0_linux_amd64.zip --output /tmp/tfc-agent_1.4.0_linux_amd64.zip   
-      unzip /tmp/tfc-agent_1.4.0_linux_amd64.zip  -d /opt/tfe-agent
+      curl https://releases.hashicorp.com/tfc-agent/${tfe_agent_version}/tfc-agent_${tfe_agent_version}_linux_amd64.zip --output /var/tmp/tfc-agent_${tfe_agent_version}_linux_amd64.zip   
+      unzip /var/tmp/tfc-agent_${tfe_agent_version}_linux_amd64.zip  -d /opt/tfe-agent
       sed -i "s/AGENT_TOKEN_WILL_BE_PLACED_HERE/$AGENT_TOKEN_SECRET/g" /etc/systemd/system/tfe-agent.service 
       export INSTANCE_ID=`curl http://169.254.169.254/latest/meta-data/instance-id`
       sed -i "s/INSTANCE_ID_WILL_BE_PLACED_HERE/$INSTANCE_ID/g" /etc/systemd/system/tfe-agent.service

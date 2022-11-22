@@ -29,6 +29,11 @@ variable "certificate_email" {
   description = "email adress that the certificate will be associated with on Let's Encrypt"
 }
 
+variable "tfe_agent_version" {
+  type        = string
+  description = "Terraform Cloud agent version to use. Semantic Versioning"
+}
+
 variable "filename_airgap" {
   description = "filename of your airgap installation located under directory airgap"
 }

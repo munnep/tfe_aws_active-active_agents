@@ -99,6 +99,7 @@ asg_tfe_server_min_size          = 1                                          # 
 asg_tfe_server_max_size          = 5                                          # TFE instance autoscaling group maximum size. 
 asg_tfe_server_desired_capacity  = 5                                          # TFE instance autoscaling group desired size. 
 create_agents                    = true                                       # If you want to create TFE agents right away. 
+tfe_agent_version                = "1.4.0"                                    # TFE Agent version you want to install                                      
 asg_tfe_agent_min_size           = 1                                          # TFE agent autoscaling group minimal size. 
 asg_tfe_agent_max_size           = 10                                         # TFE agent autoscaling group maximum size. 
 asg_tfe_agent_desired_capacity   = 10                                         # TFE agent autoscaling group desired size. 
