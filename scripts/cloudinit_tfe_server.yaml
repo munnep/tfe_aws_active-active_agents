@@ -313,9 +313,11 @@ write_files:
       
       # get the admin token you can user to create the first user
       # Create the first user called admin and get the token
-      TOKEN=`curl --header "Content-Type: application/json" --request POST --data @/etc/tfe_initial_user.json  --url https://${dns_hostname}.${dns_zonename}/admin/initial-admin-user?token=${user_token} | jq -r '.token' `
-      echo TOKEN $TOKEN
-      echo $TOKEN > /var/tmp/admin_token.txt
+      curl --header "Content-Type: application/json" --request POST --data @/etc/tfe_initial_user.json  --url https://${dns_hostname}.${dns_zonename}/admin/initial-admin-user?token=${user_token} | tee /etc/tfe_initial_user_output.json
+      
+      
+      TOKEN=`jq -e -r .token /etc/tfe_initial_user_output.json`
+      [[ $? -eq 0 && "$TOKEN" ]] || exit 1
 
       ADMIN_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${admin_token_secret} --region ${region}`
       if [ $? -ne 0 ]
@@ -332,22 +334,28 @@ write_files:
         https://${dns_hostname}.${dns_zonename}/api/v2/organizations
      
       # Create an agent pool
-      export AGENT_POOL=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data @/etc/tfe_create_agent_pool.json https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/agent-pools | jq -r '.data.relationships."authentication-tokens".links.related'`
-      export AGENT_POOL_ID=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request GET https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/agent-pools | jq -r '.data[0].id'`
+      curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data @/etc/tfe_create_agent_pool.json https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/agent-pools | tee /etc/tfe_create_agent_pool_output.json
+      export AGENT_POOL=`jq -e -r '.data.relationships."authentication-tokens".links.related' /etc/tfe_create_agent_pool_output.json`
+      [[ $? -eq 0 && "$AGENT_POOL" ]] || exit 1
+
+      curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request GET https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/agent-pools | tee /etc/tfe_get_agent_pool_output.json
+      export AGENT_POOL_ID=`jq -e -r '.data[0].id' /etc/tfe_get_agent_pool_output.json`
+      [[ $? -eq 0 && "$AGENT_POOL_ID" ]] || exit 1
       
+      # Create a workspace
+      sed -i "s/AGENT_POOL_ID_WILL_BE_PLACED_HERE/$AGENT_POOL_ID/g" /etc/tfe_create_workspace.json 
+      curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data @/etc/tfe_create_workspace.json https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/workspaces
+
       # Create an agent token
-      export AGENT_TOKEN=`curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data @/etc/tfe_create_agent_token.json https://${dns_hostname}.${dns_zonename}/$AGENT_POOL | jq -r '.data.attributes.token'`
-      echo $AGENT_TOKEN > /var/tmp/agent_token.txt
-      
+      curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data @/etc/tfe_create_agent_token.json https://${dns_hostname}.${dns_zonename}/$AGENT_POOL | tee /etc/tfe_create_agent_token_output.json
+      export AGENT_TOKEN=`jq -e -r '.data.attributes.token' /etc/tfe_create_agent_token_output.json`
+        
       AGENT_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${agent_token_secret} --region ${region}`
       if [ $? -ne 0 ]
       then
         aws secretsmanager put-secret-value --secret-id ${agent_token_secret} --region ${region} --secret-string $AGENT_TOKEN  
       fi
       
-      # Create a workspace
-      sed -i "s/AGENT_POOL_ID_WILL_BE_PLACED_HERE/$AGENT_POOL_ID/g" /etc/tfe_create_workspace.json 
-      curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data @/etc/tfe_create_workspace.json https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/workspaces
 runcmd:
   - sudo bash /var/tmp/install_software.sh 
   - sudo bash /var/tmp/download_and_unpack_software.sh 
