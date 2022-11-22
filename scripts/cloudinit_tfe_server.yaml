@@ -214,7 +214,7 @@ write_files:
       #!/usr/bin/env bash
       pushd /opt/tfe
       
-      # check replicated.conf /tmp/*.json and /etc/*.json are valid json files 
+      # check replicated.conf and /etc/*.json are valid json files 
       for json in /etc/replicated.conf /etc/*.json ; do
         echo INFO: checking $json
         jq -r . $json
