@@ -7,4 +7,5 @@ runcmd:
   - apt-add-repository "deb [arch=$(dpkg --print-architecture)] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
   - apt-get update -y
   - apt-get install -y terraform=${terraform_client_version}
+  - apt-get install -y awscli
 packages_update: true  
