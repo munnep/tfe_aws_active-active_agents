@@ -228,6 +228,14 @@ resource "aws_security_group" "tfe_server_sg" {
   }
 }
 
+resource "aws_s3_bucket" "tfe-bucket-logs" {
+  bucket        = "${var.tag_prefix}-bucket-logs"
+  force_destroy = true
+
+  tags = {
+    Name = "${var.tag_prefix}-bucket-logs"
+  }
+}
 
 resource "aws_s3_bucket" "tfe-bucket" {
   bucket        = "${var.tag_prefix}-bucket"
@@ -277,10 +285,10 @@ resource "aws_s3_object" "object_bootstrap" {
   ]
 }
 
-resource "aws_s3_bucket_acl" "tfe-bucket" {
-  bucket = aws_s3_bucket.tfe-bucket.id
-  acl    = "private"
-}
+# resource "aws_s3_bucket_acl" "tfe-bucket" {
+#   bucket = aws_s3_bucket.tfe-bucket.id
+#   acl    = "private"
+# }
 
 resource "aws_iam_role" "role" {
   name = "${var.tag_prefix}-role"
@@ -325,6 +333,7 @@ resource "aws_iam_role_policy" "policy" {
         ],
         "Resource" : [
           "arn:aws:s3:::${var.tag_prefix}-bucket",
+          "arn:aws:s3:::${var.tag_prefix}-bucket-logs",
           "arn:aws:s3:::${var.tag_prefix}-software",
           "arn:aws:s3:::*/*"
         ]
@@ -356,6 +365,9 @@ resource "acme_registration" "registration" {
 resource "acme_certificate" "certificate" {
   account_key_pem = acme_registration.registration.account_key_pem
   common_name     = "${var.dns_hostname}.${var.dns_zonename}"
+
+  recursive_nameservers        = ["1.1.1.1:53"]
+  disable_complete_propagation = true
 
   dns_challenge {
     provider = "route53"
@@ -443,11 +455,11 @@ resource "aws_db_subnet_group" "default" {
 resource "aws_db_instance" "default" {
   allocated_storage      = 10
   engine                 = "postgres"
-  engine_version         = "12"
+  engine_version         = "15"
   instance_class         = "db.t3.large"
   username               = "postgres"
   password               = var.rds_password
-  parameter_group_name   = "default.postgres12"
+  parameter_group_name   = "default.postgres15"
   skip_final_snapshot    = true
   db_name                = "tfe"
   publicly_accessible    = false
@@ -457,6 +469,7 @@ resource "aws_db_instance" "default" {
   tags = {
     "Name" = var.tag_prefix
   }
+  allow_major_version_upgrade = true
 
   depends_on = [
     aws_s3_object.object_bootstrap
@@ -478,11 +491,15 @@ resource "aws_elasticache_cluster" "example" {
   port                 = 6379
   security_group_ids   = [aws_security_group.tfe_server_sg.id]
   subnet_group_name    = aws_elasticache_subnet_group.test.name
+
+  lifecycle {
+    create_before_destroy = false
+     }
 }
 
 resource "aws_launch_configuration" "as_conf_tfe_active" {
   name_prefix          = "${var.tag_prefix}-lc2"
-  image_id             = var.ami
+  image_id             = "ami-09961f5df132ebff4"
   instance_type        = "t3.2xlarge"
   security_groups      = [aws_security_group.tfe_server_sg.id]
   iam_instance_profile = aws_iam_instance_profile.profile.name
@@ -508,7 +525,7 @@ resource "aws_launch_configuration" "as_conf_tfe_active" {
     iops        = 2000
   }
 
-  user_data = templatefile("${path.module}/scripts/cloudinit_tfe_server.yaml", {
+  user_data = templatefile("${path.module}/scripts/cloudinit_tfe_amazon_linux.yaml", {
     tag_prefix                      = var.tag_prefix
     filename_airgap                 = var.filename_airgap
     filename_license                = var.filename_license
@@ -537,7 +554,7 @@ resource "aws_launch_configuration" "as_conf_tfe_active" {
 
   lifecycle {
     create_before_destroy = true
-  }
+     }
 }
 
 # Automatic Scaling group
@@ -562,6 +579,8 @@ resource "aws_autoscaling_group" "as_group" {
   timeouts {
     delete = "15m"
   }
+
+  
 
   depends_on = [
     aws_nat_gateway.NAT, aws_security_group.tfe_server_sg, aws_internet_gateway.gw, aws_db_instance.default

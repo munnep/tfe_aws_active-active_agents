@@ -6,8 +6,17 @@ output "tfe_appplication" {
   value = "https://${var.dns_hostname}.${var.dns_zonename}"
 }
 
+data "aws_instances" "foo" {
+  instance_tags = {
+    "Name" = "${var.tag_prefix}-tfe-asg"
+  }
+  instance_state_names = ["running"]
+}
+
 output "ssh_tfe_server" {
-  value = "ssh -J ubuntu@${var.dns_hostname}-client.${var.dns_zonename} ubuntu@<internal ip address of a TFE server>"
+  value = [
+    for k in data.aws_instances.foo.private_ips : "ssh -J ubuntu@${var.dns_hostname}-client.${var.dns_zonename} ec2-user@${k}"
+  ]
 }
 
 output "ssh_tfe_agent" {

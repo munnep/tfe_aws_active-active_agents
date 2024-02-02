@@ -1,0 +1,396 @@
+#cloud-config
+write_files:
+  - path: /etc/replicated.conf
+    permissions: '0640'
+    content: |
+      {
+          "DaemonAuthenticationType":          "password",
+          "DaemonAuthenticationPassword":      "${tfe_password}",
+          "TlsBootstrapType":                  "self-signed",
+          "TlsBootstrapHostname":              "${dns_hostname}.${dns_zonename}",
+          "BypassPreflightChecks":             true,
+          "ImportSettingsFrom":                "/etc/tfe_settings.json",
+          "LicenseFileLocation":               "/etc/${filename_license}"
+      }
+  - path: /etc/tfe_settings.json
+    permissions: '0640'
+    content: |
+      {
+          "archivist_token" : {
+            "value" : "${archivist_token}"
+          },
+         "enable_active_active" : {
+          "value": "1"
+         },
+         "aws_instance_profile": {
+              "value": "1"
+          },
+          "cookie_hash" : {
+            "value" : "${cookie_hash}"
+          },
+          "enc_password": {
+              "value": "${tfe_password}"
+          },
+          "hairpin_addressing": {
+              "value": "1"
+          },
+          "hostname": {
+              "value": "${dns_hostname}.${dns_zonename}"
+          },
+          "install_id" : {
+            "value" : "${install_id}"
+          },
+          "internal_api_token" : {
+           "value" : "${internal_api_token}"
+          },
+          "log_forwarding_config": {
+           "value": "[FILTER]\n    Name modify\n    Match *\n    Condition Key_Value_Equals container_partial_last true\n    Add container_partial_message true\n\n# Multiline filter also expects fields to be named \\\"partial_*\\\", not \\\"container_partial_*\\\", so get rid of the prefix\n[FILTER]\n    Name modify\n    Match *\n    Rename container_partial_id partial_id\n    Rename container_partial_ordinal partial_ordinal\n    Rename container_partial_last partial_last\n    Rename container_partial_message partial_message\n\n# This takes care of joining long log lines that had been split by docker logging component\n[FILTER]\n    Name                  multiline\n    Match                 *\n    Multiline.key_content message\n    Mode                  partial_message\n\n[OUTPUT]\n    Name s3\n    Match *\n    bucket tfe1-bucket-logs\n    region eu-west-1\n    total_file_size 25M\n    s3_key_format /$TAG/%Y/%m/%d/%H%M%S-$UUID.json.gz\n    s3_key_format_tag_delimiters .-\n    compression gzip\n    use_put_object true\n    send_content_md5 true"
+          },
+          "log_forwarding_enabled": {
+              "value": "1"
+          },
+          "pg_dbname": {
+              "value": "${pg_dbname}"
+          },
+          "pg_netloc": {
+              "value": "${pg_address}"
+          },
+          "pg_password": {
+              "value": "${rds_password}"
+          },
+          "pg_user": {
+              "value": "postgres"
+          },
+          "placement": {
+              "value": "placement_s3"
+          },
+          "production_type": {
+              "value": "external"
+          },
+          "redis_host" : {
+            "value": "${redis_server}"
+          },
+          "redis_port" : {
+            "value": "6379"
+          },
+          "redis_use_password_auth" : {
+            "value": "0"
+          },
+          "redis_use_tls" : {
+            "value": "0"
+          },
+          "registry_session_encryption_key" : {
+            "value" : "${registry_session_encryption_key}"
+          },
+          "registry_session_secret_key" : {
+            "value" : "${registry_session_secret_key}"
+          },
+          "root_secret" : {
+            "value" : "${root_secret}"
+          },
+          "s3_bucket": {
+              "value": "${tfe_bucket}"
+          },
+          "s3_endpoint": {},
+          "s3_region": {
+              "value": "${region}"
+          },
+          "user_token" : {
+            "value" : "${user_token}"
+          }
+      }   
+  - path: /var/tmp/install_software.sh 
+    permissions: '0750'
+    content: |
+      #!/usr/bin/env bash
+      # installation script for software
+      
+      # Wait until there is internet before continue
+      until ping -c1 google.com &>/dev/null; do
+       echo "waiting for networking to initialise"
+       sleep 3 
+      done 
+      
+      
+      # add public ssh key patrick
+      curl -sL https://raw.githubusercontent.com/kikitux/curl-bash/master/provision/add_github_user_public_keys.sh | GITHUB_USER=munnep bash
+      
+      # Set swappiness
+      if test -f /sys/kernel/mm/transparent_hugepage/enabled; then
+        echo never > /sys/kernel/mm/transparent_hugepage/enabled
+      fi
+      
+      if test -f /sys/kernel/mm/transparent_hugepage/defrag; then
+        echo never > /sys/kernel/mm/transparent_hugepage/defrag
+      fi
+      
+      # heavy swap vm.swappiness=80
+      # no swap vm.swappiness=1
+
+      echo vm.swappiness=1 >> /etc/sysctl.conf
+      echo vm.min_free_kbytes=67584 >> /etc/sysctl.conf
+      echo vm.drop_caches=1 >> /etc/sysctl.conf
+      sysctl -p
+      
+      # configure the disks and mount points
+      SWAP=/dev/$(lsblk|grep nvme | grep -v nvme0n1 |sort -k 4 -r | awk '{print $1}'| awk '(NR==1)')
+      DOCKER=/dev/$(lsblk|grep nvme | grep -v nvme0n1 |sort -k 4 -r | awk '{print $1}'| awk '(NR==2)')
+      
+      echo $SWAP
+      echo $DOCKER
+      
+      # swap
+      # if SWAP exists
+      # we format if no format
+      if [ -b $SWAP ]; then
+      	blkid $SWAP
+      	if [ $? -ne 0 ]; then
+      		mkswap $SWAP
+      	fi
+      fi
+      
+      # if SWAP not in fstab
+      # we add it
+      grep "swap" /etc/fstab
+      if [ $? -ne 0 ]; then
+        SWAP_UUID=`blkid $SWAP| awk '{print $2}'`
+      	echo "$SWAP_UUID swap swap defaults 0 0" | tee -a /etc/fstab
+      	swapon -a
+      fi
+      
+      # docker
+      # if DOCKER exists
+      # we format if no format
+      if [ -b $DOCKER ]; then
+      	blkid $DOCKER
+      	if [ $? -ne 0 ]; then
+      		mkfs.xfs $DOCKER
+      	fi
+      fi
+      
+      # if DOCKER not in fstab
+      # we add it
+      grep "/var/lib/docker" /etc/fstab
+      if [ $? -ne 0 ]; then
+        DOCKER_UUID=`blkid $DOCKER| awk '{print $2}'`
+      	echo "$DOCKER_UUID /var/lib/docker xfs defaults 0 0" | tee -a /etc/fstab
+      	mkdir -p /var/lib/docker
+      	mount -a
+      fi
+      
+      # install requirements for tfe
+      amazon-linux-extras enable selinux-ng
+      
+      cat > /etc/yum.repos.d/docker-ce.repo <<EOF 
+      [docker-ce-stable]
+      name=Docker CE 
+      baseurl=https://download.docker.com/linux/centos/8/x86_64/stable
+      enabled=1
+      gpgcheck=1
+      gpgkey=https://download.docker.com/linux/centos/gpg
+      EOF
+      
+      yum -y update
+      yum -y install unzip jq
+
+      sudo yum -y install docker-ce-24.0.7-1.el8 docker-ce-cli-24.0.7-1.el8 containerd.io docker-buildx-plugin docker-compose-plugin
+
+      systemctl enable docker
+      systemctl start docker
+
+      # journalctl issues with logging
+      echo RateLimitInterval=0 >> /etc/systemd/journald.conf
+      echo RateLimitBurst=0 >> /etc/systemd/journald.conf
+
+      systemctl restart rsyslog
+  - path: /var/tmp/download_and_unpack_software.sh 
+    permissions: '0750'
+    content: |
+      #!/usr/bin/env bash
+
+      # wait until archive is available. Wait until there is internet before continue
+      until ping -c1 archive.ubuntu.com &>/dev/null; do
+        echo "waiting for networking to initialise"
+        sleep 3 
+      done 
+      
+      # Download all the software and files needed
+      # install aws cli
+      pushd /var/tmp
+      curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+      unzip awscliv2.zip
+      sudo ./aws/install --bin-dir /usr/bin --install-dir /usr/local/aws-cli --update
+
+
+      aws s3 cp s3://${tag_prefix}-software/${filename_license} /etc/${filename_license}
+      
+      # directory for decompress the file
+      sudo mkdir -p /opt/tfe
+  - path: /var/tmp/install_tfe.sh   
+    permissions: '0750'
+    content: |
+      #!/usr/bin/env bash
+      pushd /opt/tfe
+      
+      # check replicated.conf and /etc/*.json are valid json files 
+      for json in /etc/replicated.conf /etc/*.json ; do
+        echo INFO: checking $json
+        jq -r . $json
+        if [ $? -ne 0 ] ; then
+          echo ERR: $json is not a valid json
+          exit 1
+        fi
+      done
+
+      # Following manual:
+      # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html
+      TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
+      LOCAL_IP=`curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/local-ipv4`
+
+      pushd /var/tmp/
+
+      curl -o install.sh https://install.terraform.io/ptfe/stable
+      
+
+      bash ./install.sh no-docker release-sequence=742 no-proxy private-address=$LOCAL_IP disable-replicated-ui
+  - path: /etc/tfe_initial_user.json
+    permissions: '0755'
+    content: |  
+      {
+          "username": "admin",
+          "email": "${certificate_email}",
+          "password": "${tfe_password}"
+      }   
+  - path: /etc/tfe_create_organization.json
+    permissions: '0755'
+    content: |  
+      {
+          "data": {
+              "type": "organizations",
+              "attributes": {
+                  "name": "test",
+                  "email": "${certificate_email}"
+              }
+          }
+      }   
+  - path: /etc/tfe_create_agent_pool.json
+    permissions: '0755'
+    content: |  
+      {
+          "data": {
+              "type": "agent-pools",
+              "attributes": {
+                  "name": "test-pool",
+                  "organization-scoped": true
+              }
+          }
+      }  
+  - path: /etc/tfe_create_agent_token.json
+    permissions: '0755'
+    content: |  
+      {
+          "data": {
+              "type": "authentication-tokens",
+              "attributes": {
+                  "description": "api"
+              }
+          }
+      }
+  - path: /etc/tfe_create_workspace.json
+    permissions: '0755'
+    content: |  
+      {
+          "data": {
+              "attributes": {
+                  "name": "test-agent",
+                  "execution-mode": "agent",
+                  "agent-pool-id": "AGENT_POOL_ID_WILL_BE_PLACED_HERE",
+                  "resource-count": 0,
+                  "updated-at": "2017-11-29T19:18:09.976Z"
+              }
+          },
+          "type": "workspaces"
+      }  
+  - path: /var/tmp/tfe_setup.sh
+    permissions: '0777'
+    content: |
+      #!/usr/bin/env bash
+      
+      # needed when not using valid certificates
+      # echo -n | openssl s_client -connect ${dns_hostname}.${dns_zonename}:443 | openssl x509 > tfe_certificate.crt
+      # cp tfe_certificate.crt /usr/local/share/ca-certificates/
+      # update-ca-certificates
+      
+      # We have to wait for TFE be fully functioning before we can continue
+      while true; do
+          if curl -I "https://${dns_hostname}.${dns_zonename}/admin" 2>&1 | grep -w "200\|301" ; 
+          then
+              echo "TFE is up and running"
+              echo "Will continue in 1 minutes with the final steps"
+              sleep 60
+              break
+          else
+              echo "TFE is not available yet. Please wait..."
+              sleep 60
+          fi
+      done
+      
+      # as we will run this from all servers in ASG, we will use a random sleep
+      # so one server tries first
+      
+      # we get 2 characters from random
+      WAIT=$${RANDOM:1:2}
+      
+      echo Info: sleeping for $WAIT
+      sleep $WAIT
+      
+      # get the admin token you can user to create the first user
+      # Create the first user called admin and get the token
+      curl --header "Content-Type: application/json" --request POST --data @/etc/tfe_initial_user.json  --url https://${dns_hostname}.${dns_zonename}/admin/initial-admin-user?token=${user_token} | tee /etc/tfe_initial_user_output.json
+      
+      
+      TOKEN=`jq -e -r .token /etc/tfe_initial_user_output.json`
+      [[ $? -eq 0 && "$TOKEN" ]] || exit 1
+
+      ADMIN_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${admin_token_secret} --region ${region}`
+      if [ $? -ne 0 ]
+      then
+        aws secretsmanager put-secret-value --secret-id ${admin_token_secret} --region ${region} --secret-string $TOKEN  
+      fi
+
+      # create organization test
+      curl \
+        --header "Authorization: Bearer $TOKEN" \
+        --header "Content-Type: application/vnd.api+json" \
+        --request POST \
+        --data @/etc/tfe_create_organization.json \
+        https://${dns_hostname}.${dns_zonename}/api/v2/organizations
+     
+      # Create an agent pool
+      curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data @/etc/tfe_create_agent_pool.json https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/agent-pools | tee /etc/tfe_create_agent_pool_output.json
+      export AGENT_POOL=`jq -e -r '.data.relationships."authentication-tokens".links.related' /etc/tfe_create_agent_pool_output.json`
+      [[ $? -eq 0 && "$AGENT_POOL" ]] || exit 1
+
+      curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request GET https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/agent-pools | tee /etc/tfe_get_agent_pool_output.json
+      export AGENT_POOL_ID=`jq -e -r '.data[0].id' /etc/tfe_get_agent_pool_output.json`
+      [[ $? -eq 0 && "$AGENT_POOL_ID" ]] || exit 1
+      
+      # Create a workspace
+      sed -i "s/AGENT_POOL_ID_WILL_BE_PLACED_HERE/$AGENT_POOL_ID/g" /etc/tfe_create_workspace.json 
+      curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data @/etc/tfe_create_workspace.json https://${dns_hostname}.${dns_zonename}/api/v2/organizations/test/workspaces
+
+      # Create an agent token
+      curl --header "Authorization: Bearer $TOKEN" --header "Content-Type: application/vnd.api+json" --request POST --data @/etc/tfe_create_agent_token.json https://${dns_hostname}.${dns_zonename}/$AGENT_POOL | tee /etc/tfe_create_agent_token_output.json
+      export AGENT_TOKEN=`jq -e -r '.data.attributes.token' /etc/tfe_create_agent_token_output.json`
+        
+      AGENT_TOKEN_SECRET=`aws secretsmanager get-secret-value --secret-id ${agent_token_secret} --region ${region}`
+      if [ $? -ne 0 ]
+      then
+        aws secretsmanager put-secret-value --secret-id ${agent_token_secret} --region ${region} --secret-string $AGENT_TOKEN  
+      fi
+      
+runcmd:
+  - sudo bash /var/tmp/install_software.sh 
+  - sudo bash /var/tmp/download_and_unpack_software.sh 
+  - sudo bash /var/tmp/install_tfe.sh 
+  - sudo bash /var/tmp/tfe_setup.sh 
