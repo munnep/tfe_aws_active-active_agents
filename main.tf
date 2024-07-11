@@ -167,13 +167,13 @@ resource "aws_security_group" "tfe_server_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  ingress {
-    description = "https from internet"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  # ingress {
+  #   description = "ssh from internet"
+  #   from_port   = 22
+  #   to_port     = 22
+  #   protocol    = "tcp"
+  #   cidr_blocks = ["0.0.0.0/0"]
+  # }
 
   ingress {
     description = "netdata from internet"
@@ -311,6 +311,17 @@ resource "aws_iam_instance_profile" "profile" {
   name = "${var.tag_prefix}-instance"
   role = aws_iam_role.role.name
 }
+
+# fetch the arn of the SecurityComputeAccess policy
+data "aws_iam_policy" "SecurityComputeAccess" {
+  name = "SecurityComputeAccess"
+}
+# add the SecurityComputeAccess policy to IAM role connected to your EC2 instance
+resource "aws_iam_role_policy_attachment" "SSM" {
+  role       = aws_iam_role.role.name
+  policy_arn = data.aws_iam_policy.SecurityComputeAccess.arn
+}
+
 
 resource "aws_iam_role_policy" "policy" {
   name = "${var.tag_prefix}-bucket"
@@ -494,12 +505,12 @@ resource "aws_elasticache_cluster" "example" {
 
   lifecycle {
     create_before_destroy = false
-     }
+  }
 }
 
 resource "aws_launch_configuration" "as_conf_tfe_active" {
   name_prefix          = "${var.tag_prefix}-lc2"
-  image_id             = "ami-09961f5df132ebff4"
+  image_id             = var.ami
   instance_type        = "t3.2xlarge"
   security_groups      = [aws_security_group.tfe_server_sg.id]
   iam_instance_profile = aws_iam_instance_profile.profile.name
@@ -525,7 +536,7 @@ resource "aws_launch_configuration" "as_conf_tfe_active" {
     iops        = 2000
   }
 
-  user_data = templatefile("${path.module}/scripts/cloudinit_tfe_amazon_linux.yaml", {
+  user_data = templatefile("${path.module}/scripts/cloudinit_tfe_server.yaml", {
     tag_prefix                      = var.tag_prefix
     filename_airgap                 = var.filename_airgap
     filename_license                = var.filename_license
@@ -554,7 +565,7 @@ resource "aws_launch_configuration" "as_conf_tfe_active" {
 
   lifecycle {
     create_before_destroy = true
-     }
+  }
 }
 
 # Automatic Scaling group
@@ -580,7 +591,7 @@ resource "aws_autoscaling_group" "as_group" {
     delete = "15m"
   }
 
-  
+
 
   depends_on = [
     aws_nat_gateway.NAT, aws_security_group.tfe_server_sg, aws_internet_gateway.gw, aws_db_instance.default

@@ -15,7 +15,7 @@ data "aws_instances" "foo" {
 
 output "ssh_tfe_server" {
   value = [
-    for k in data.aws_instances.foo.private_ips : "ssh -J ubuntu@${var.dns_hostname}-client.${var.dns_zonename} ec2-user@${k}"
+    for k in data.aws_instances.foo.private_ips : "ssh -J ubuntu@${var.dns_hostname}-client.${var.dns_zonename} ubuntu@${k}"
   ]
 }
 

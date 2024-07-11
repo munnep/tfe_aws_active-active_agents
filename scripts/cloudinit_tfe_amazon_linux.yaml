@@ -252,7 +252,7 @@ write_files:
       curl -o install.sh https://install.terraform.io/ptfe/stable
       
 
-      bash ./install.sh no-docker release-sequence=742 no-proxy private-address=$LOCAL_IP disable-replicated-ui
+      bash ./install.sh no-docker release-sequence=757 no-proxy private-address=$LOCAL_IP disable-replicated-ui
   - path: /etc/tfe_initial_user.json
     permissions: '0755'
     content: |  
